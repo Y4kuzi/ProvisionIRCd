@@ -7,7 +7,6 @@ import ssl
 import ircd
 
 
-@ircd.Modules.command
 class Starttls(ircd.Command):
     def __init__(self):
         self.command = 'starttls'

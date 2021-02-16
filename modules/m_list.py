@@ -5,7 +5,6 @@
 import ircd
 
 
-@ircd.Modules.command
 class List(ircd.Command):
     """
     Request a list of all channels on the network

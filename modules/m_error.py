@@ -5,7 +5,6 @@
 import ircd
 
 
-@ircd.Modules.command
 class Error(ircd.Command):
     def __init__(self):
         self.command = 'error'

@@ -5,7 +5,6 @@
 import ircd
 
 
-@ircd.Modules.command
 class Svsjoin(ircd.Command):
     def __init__(self):
         self.params = 2
@@ -24,7 +23,6 @@ class Svsjoin(ircd.Command):
         target.handle('join', recv[3], params=p)
 
 
-@ircd.Modules.command
 class Svspart(ircd.Command):
     def __init__(self):
         self.params = 2

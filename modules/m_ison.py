@@ -5,7 +5,6 @@
 import ircd
 
 
-@ircd.Modules.command
 class Ison(ircd.Command):
     """
     Checks to see if a nickname is online.
@@ -25,7 +24,6 @@ class Ison(ircd.Command):
         client.sendraw(self.RPL.ISON, ':{}'.format(' '.join(nicks)))
 
 
-@ircd.Modules.command
 class Userhost(ircd.Command):
     """
     Returns the cloaked userhost of the given user.

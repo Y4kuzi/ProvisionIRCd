@@ -140,7 +140,7 @@ class Privmsg(ircd.Command):
                 client.idle = int(time.time())
                 self.ircd.new_sync(self.ircd, sourceServer, ':{} PRIVMSG {} :{}'.format(sourceID, target, msg))
 
-                ### Check for module hooks (channel messages).
+                # Check for module hooks (channel messages).
                 if type(client).__name__ == 'User':
                     for callable in [callable for callable in self.ircd.hooks if callable[0].lower() == 'chanmsg']:
                         try:
@@ -149,7 +149,6 @@ class Privmsg(ircd.Command):
                             logging.exception(ex)
 
 
-@ircd.Modules.command
 class Notice(ircd.Command):
     """
     Send a direct notice to a channel or user.
@@ -184,7 +183,7 @@ class Notice(ircd.Command):
         elif len(recv) < 3:
             return client.sendraw(self.ERR.NOTEXTTOSEND, ':No text to send')
 
-        global msg
+        # global msg
         msg = ' '.join(recv[2:])
 
         if type(client).__name__ == 'User':

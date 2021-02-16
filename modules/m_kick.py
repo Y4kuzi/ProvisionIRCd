@@ -9,7 +9,6 @@ from handle.functions import logging
 KICKLEN = 312
 
 
-@ircd.Modules.command
 class Kick(ircd.Command):
     """Syntax: KICK <channel> <user> [reason]
 
@@ -87,7 +86,7 @@ class Kick(ircd.Command):
         reason = reason[:KICKLEN]
 
         broadcast = list(channel.users)
-        ### Check module hooks for visible_in_channel()
+        # Check module hooks for visible_in_channel()
         for u in broadcast:
             visible = 1
             for callable in [callable for callable in self.ircd.hooks if callable[0].lower() == 'visible_in_channel']:

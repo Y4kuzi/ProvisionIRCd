@@ -5,7 +5,6 @@
 import ircd
 
 
-@ircd.Modules.command
 class Ircdhelp(ircd.Command):
     def __init__(self):
         self.command = ['helpop', 'help', 'ircdhelp', 'hlep', 'hepl']

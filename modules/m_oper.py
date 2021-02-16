@@ -13,7 +13,6 @@ except ImportError:
 from handle.functions import match, logging
 
 
-@ircd.Modules.command
 class Oper(ircd.Command):
     """Enable IRC operator access.
 
@@ -40,7 +39,7 @@ class Oper(ircd.Command):
 
         if self.ircd.conf['opers'][recv[1]]['password'].startswith('$2b$') and len(self.ircd.conf['opers'][recv[1]]['password']) > 58:
             logging.debug('Detected bcrypt for /oper')
-            password = recv[2].encode('utf-8')  ### Bytes password, plain.
+            password = recv[2].encode('utf-8')  # Bytes password, plain.
             hashed = self.ircd.conf['opers'][recv[1]]['password'].encode('utf-8')  ### Bytes password, hashed.
             if not bcrypt.checkpw(password, hashed):
                 client.flood_penalty += 350000
@@ -63,7 +62,6 @@ class Oper(ircd.Command):
                     return self.ircd.snotice('o', msg)
 
         selfhost = client.fullrealhost().split('!')[1]
-        operhost = self.ircd.conf['opers'][recv[1]]['host']
         hostMatch = False
         for host in self.ircd.conf['opers'][recv[1]]['host']:
             if match(host, selfhost):

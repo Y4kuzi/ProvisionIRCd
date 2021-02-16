@@ -5,7 +5,6 @@
 import ircd
 
 
-@ircd.Modules.command
 class Sendumode(ircd.Command):
     def __init__(self):
         self.command = 'sendumode'
@@ -13,7 +12,7 @@ class Sendumode(ircd.Command):
         self.req_class = 'Server'
 
     def execute(self, client, recv):
-        ### 00B SENDUMODE o :message
+        # 00B SENDUMODE o :message
         source = list(filter(lambda s: s.sid == recv[0][1:], self.ircd.servers))[0]
         for user in [user for user in self.ircd.users if recv[2] in user.modes and user.socket]:
             source.broadcast([user], 'NOTICE {} {}'.format(user.nickname, ' '.join(recv[3:])))

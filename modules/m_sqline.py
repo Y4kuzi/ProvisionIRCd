@@ -7,7 +7,6 @@ import time
 import ircd
 
 
-@ircd.Modules.command
 class Sqline(ircd.Command):
     def __init__(self):
         self.command = 'sqline'
@@ -25,7 +24,6 @@ class Sqline(ircd.Command):
         client.handle('tkl', data)
 
 
-@ircd.Modules.command
 class Unsqline(ircd.Command):
     def __init__(self):
         self.command = 'unsqline'

@@ -7,7 +7,6 @@ import ircd
 from handle.functions import match
 
 
-@ircd.Modules.command
 class Kill(ircd.Command):
     """
     Forcefully disconnect a user from the server.
@@ -37,7 +36,7 @@ class Kill(ircd.Command):
                 sourceID = source.sid
                 path = source.hostname
 
-            reason = quitmsg = ' '.join(recv[3:])[1:]
+            reason = ' '.join(recv[3:])[1:]
             quitmsg = '[{}] Global kill by {} ({})'.format(client.hostname, path, reason)
 
             if target[0].socket:

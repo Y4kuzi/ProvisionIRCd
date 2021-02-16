@@ -5,7 +5,6 @@
 import ircd
 
 
-@ircd.Modules.command
 class Quit(ircd.Command):
     """
     Disconnect from the network.
@@ -16,15 +15,13 @@ class Quit(ircd.Command):
         self.command = 'quit'
 
     def execute(self, client, recv, showPrefix=True):
-        source = None
         if type(client).__name__ == 'Server':
-            source = client
             showPrefix = False
             if not client.eos:
                 return
             client = list(filter(lambda u: u.uid == recv[0][1:], self.ircd.users))
             if not client:
-                ### User is already disconnected.
+                # User is already disconnected.
                 return
             else:
                 client = client[0]

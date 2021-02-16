@@ -5,7 +5,6 @@
 import ircd
 
 
-@ircd.Modules.command
 class Chgcname(ircd.Command):
     """
     Change channel name capitalisation.
@@ -18,7 +17,7 @@ class Chgcname(ircd.Command):
         self.req_modes = 'o'
 
     def execute(self, client, recv):
-        if type(self).__name__ == 'Server':
+        if type(client).__name__ == 'Server':
             sourceServer = client
             client = list(filter(lambda u: u.uid == recv[0][1:] or u.nickname == recv[0][1:], self.ircd.users))[0]
             recv = recv[1:]

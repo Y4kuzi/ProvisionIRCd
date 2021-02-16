@@ -11,7 +11,7 @@ from handle.functions import logging
 # from modules.m_mode import makeMask
 # from collections import OrderedDict
 
-### Dictionary of properties. name: chlevel
+# Dictionary of properties. name: chlevel
 properties = {
     "rejoindelay": 3,
     "nomasshighlight": 3
@@ -100,13 +100,13 @@ def prop(self, localServer, recv):
         if self.chlevel(chan) < 2 and not self.ocheck('o', 'override'):
             return
         if len(recv) == 2:
-            ### Requesting prop list.
+            # Requesting prop list.
             if not chan.properties:
                 return localServer.notice(self, "No properties for {} set.".format(chan.name))
             for p in chan.properties:
                 localServer.notice(self, "{} = {}".format(p, chan.properties[p]))
             return
-        ### /PROP <channel> <property> :[data]
+        # /PROP <channel> <property> :[data]
         elif len(recv) == 3:
             return localServer.notice(self, "Invalid syntax: /prop <channel> <property> :[data]")
         global properties
@@ -128,13 +128,13 @@ def prop(self, localServer, recv):
 
             data = data[1:]
             if prop.lower() == 'rejoindelay':
-                ### Takes an integer.
+                # Takes an integer.
                 if not data.isdigit() or 0 <= int(data) > 60:
                     return localServer.notice(self, "Data for {} must be an integer between 1-60.".format(prop))
                 chan.properties[prop] = int(data)
 
             elif prop.lower() == 'nomasshighlight':
-                ### Takes an integer.
+                # Takes an integer.
                 if not data.isdigit() or int(data) <= 2:
                     return localServer.notice(self, "Data for {} must be an integer >2.".format(prop))
                 chan.properties[prop] = int(data)
@@ -151,7 +151,7 @@ def prop_dictset(self, localServer, channel):
     channel.properties = {}
 
 
-### No instant rejoin after kicks checks.
+# No instant rejoin after kicks checks.
 @ircd.Modules.hooks.local_kick()
 def got_kicked(self, localServer, user, channel, reason):
     user.kicktime = int(time.time())
@@ -169,7 +169,7 @@ def user_wants_join(self, localServer, channel, **kwargs):
         return (1, [])
 
 
-### No mass highlights.
+# No mass highlights.
 @ircd.Modules.hooks.pre_chanmsg()
 def check_hl(self, localServer, channel, msg):
     if 'nomasshighlight' in channel.properties and 'o' not in self.modes and self.chlevel(channel) < 3:

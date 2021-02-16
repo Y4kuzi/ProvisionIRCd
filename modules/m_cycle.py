@@ -5,7 +5,6 @@
 import ircd
 
 
-@ircd.Modules.command
 class Cycle(ircd.Command):
     """
     Parts and rejoins the channel.
@@ -19,7 +18,7 @@ class Cycle(ircd.Command):
         for chan in recv[1].split(','):
             channel = list(filter(lambda c: c.name.lower() == chan.lower(), client.channels))
             if not channel:
-                client.sendraw(442, '{} :You\'re not on that channel'.format(chan))
+                client.sendraw(self.ERR.NOTONCHANNEL, '{} :You\'re not on that channel'.format(chan))
                 continue
 
             channel = channel[0]

@@ -73,7 +73,6 @@ class Server(ircd.Command):
                     syncData(self.ircd, client)
 
 
-@ircd.Modules.command
 class Sid(ircd.Command):
     def __init__(self):
         self.command = 'sid'
@@ -109,11 +108,11 @@ class Sid(ircd.Command):
                         syncData(self.ircd, client)
             return
 
-        for server in [server for server in self.ircd.servers if server.sid == sid and server != client]:
+        if [server for server in self.ircd.servers if server.sid == sid and server != client]:
             client._send(':{} ERROR :SID {} is already in use on that network'.format(self.ircd.sid, sid))
             client.quit('SID {} is already in use on that network'.format(sid))
             return
-        for server in [server for server in self.ircd.servers if server.hostname.lower() == hostname.lower() and server != client]:
+        if [server for server in self.ircd.servers if server.hostname.lower() == hostname.lower() and server != client]:
             client._send(':{} ERROR :Hostname {} is already in use on that network'.format(self.ircd.sid, hostname))
             client.quit('Server {} is already in use on that network'.format(hostname))
             return

@@ -7,7 +7,6 @@ import re
 import ircd
 
 
-@ircd.Modules.command
 class Sapart(ircd.Command):
     """Forcefully part a user from a channel.
     Syntax: SAPART <user> <channel>

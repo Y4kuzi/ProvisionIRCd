@@ -5,7 +5,6 @@
 import ircd
 
 
-@ircd.Modules.command
 class Sanick(ircd.Command):
     """
     Forcefully change a users nickname.

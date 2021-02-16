@@ -12,7 +12,6 @@ except:
     pass
 
 
-# @ircd.Modules.command
 class Memdebug(ircd.Command):
     def __init__(self):
         self.command = 'memdebug'
@@ -49,7 +48,7 @@ class Memdebug(ircd.Command):
                     # objgraph.show_refs([obj], filename='/home/y4kuzi/Desktop/NewIRCd/sample-graph.png')
                     # objgraph.show_backrefs([obj], filename='/home/y4kuzi/Desktop/NewIRCd/sample-backref-graph.png')
 
-                    ### Socket debugger.
+                    # Socket debugger.
                     if type == 'socket':
                         inuse = list(filter(lambda s: s.socket == r, self.ircd.users + self.ircd.servers))
                         # print('Socket is in use? {}'.format(bool(inuse)))
@@ -66,7 +65,7 @@ class Memdebug(ircd.Command):
                                 pass
                             del r
 
-                    ### List debugger
+                    # List debugger
                     '''
                     if type == 'list':
                         if len(r) == 0:

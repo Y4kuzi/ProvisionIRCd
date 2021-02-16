@@ -485,7 +485,6 @@ def processModes(self, ircd, channel, recv, sync=True, sourceServer=None, source
         logging.exception(ex)
 
 
-@ircd.Modules.command
 class Mode(ircd.Command):
     """
     Change channel or user modes.
@@ -539,7 +538,6 @@ class Mode(ircd.Command):
                     channel = channel[0]
                     if 's' in channel.modes and client not in channel.users and not client.ocheck('o', 'override'):
                         return
-                    params = []
                     show_params = []
                     for m in channel.modes:
                         if channel in self.ircd.chan_params and m in self.ircd.chan_params[channel]:

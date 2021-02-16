@@ -9,7 +9,6 @@ from handle.functions import logging
 from handle.handleLink import syncData
 
 
-@ircd.Modules.command
 class Ping(ircd.Command):
     """
     Ping/pong
@@ -36,7 +35,7 @@ class Ping(ircd.Command):
                 syncData(self.ircd, source, local_only=local_only)
                 return
 
-            ### Old: data = ':{} PONG {} {}'.format(dest[0].sid, dest[0].hostname, recv[2])
+            # Old: data = ':{} PONG {} {}'.format(dest[0].sid, dest[0].hostname, recv[2])
             if client.eos and (dest[0].eos or dest[0] == self.ircd):
                 data = ':{} PONG {} {}'.format(dest[0].sid, dest[0].hostname, recv[2])
                 client._send(data)
@@ -44,7 +43,6 @@ class Ping(ircd.Command):
             client._send(':{} PONG {} :{}'.format(self.ircd.hostname, self.ircd.hostname, recv[1]))
 
 
-@ircd.Modules.command
 class Pong(ircd.Command):
     """
     Reply to a PING command.
@@ -56,8 +54,8 @@ class Pong(ircd.Command):
 
     def execute(self, client, recv):
         if type(client).__name__ == 'Server':
-            ### Sent: :00B PONG services.dev.provisionweb.org dev.provisionweb.org
-            ### Received: :test.provisionweb.org PONG test.provisionweb.org :services.dev.provisionweb.org
+            # Sent: :00B PONG services.dev.provisionweb.org dev.provisionweb.org
+            # Received: :test.provisionweb.org PONG test.provisionweb.org :services.dev.provisionweb.org
             source = list(filter(lambda s: s.sid == recv[0][1:] or s.hostname == recv[0][1:], self.ircd.servers))[0]
             source.ping = int(time.time())
         client.lag = int((time.time() * 1000) - client.lastPingSent)

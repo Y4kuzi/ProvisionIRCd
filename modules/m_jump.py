@@ -5,11 +5,10 @@
 import ircd
 
 
-@ircd.Modules.command
 class Jump(ircd.Command):
     """
     Attempts to redirect a user to another server.
-    This will only work with some clients, like mIRC
+    This will only work with some clients, like mIRC.
     Syntax: JUMP <nick> <server:port>
     """
 
@@ -43,7 +42,7 @@ class Jump(ircd.Command):
         if port.isdigit():
             port = int(port)
             validPort = True
-            if port < 0 and port > 65535:
+            if 0 > port > 65535:
                 validPort = False
 
         if not validPort:

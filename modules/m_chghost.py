@@ -5,7 +5,6 @@
 import ircd
 
 
-@ircd.Modules.command
 class Chghost(ircd.Command):
     """
     Changes a users' cloak host.

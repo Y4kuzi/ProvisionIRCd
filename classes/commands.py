@@ -37,7 +37,6 @@ class Command:
         if type(self.command) != list:
             pass
 
-        exists = 0
         for c in self.ircd.command_class:
             for m in [m for m in list(c.command) if m in self.command]:
                 # logging.debug('Apparently, {} is equal to {}'.format(c.command, self.command))

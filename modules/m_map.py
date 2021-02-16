@@ -8,7 +8,6 @@ import time
 import ircd
 
 
-@ircd.Modules.command
 class Map(ircd.Command):
     """
     Displays a detailed overview of all linked servers.
@@ -44,7 +43,6 @@ class Map(ircd.Command):
         client.sendraw(self.RPL.MAPEND, ':End of /MAP')
 
 
-@ircd.Modules.command
 class Links(ircd.Command):
     """
     Displays an overview of all linked servers.

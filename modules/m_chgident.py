@@ -5,7 +5,6 @@
 import ircd
 
 
-@ircd.Modules.command
 class Chgident(ircd.Command):
     """Changes the ident (username) part of a user.
     Syntax: CHGIDENT <target> <newident>

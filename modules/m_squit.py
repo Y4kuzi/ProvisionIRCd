@@ -10,7 +10,6 @@ W = '\033[0m'  # white (normal)
 R = '\033[31m'  # red
 
 
-@ircd.Modules.command
 class Squit(ircd.Command):
     def __init__(self):
         self.command = 'squit'
