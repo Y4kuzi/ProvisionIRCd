@@ -136,4 +136,4 @@ class Kick(ircd.Command):
                 logging.exception(ex)
 
         if sync:
-            self.ircd.new_sync(self.ircd, sourceServer, ':{} KICK {} {} :{}'.format(sourceID, channel.name, user.nickname, reason))
+            self.ircd.new_sync(sourceServer, ':{} KICK {} {} :{}'.format(sourceID, channel.name, user.nickname, reason))

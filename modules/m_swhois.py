@@ -25,4 +25,4 @@ class Swhois(ircd.Command):
         else:
             user.swhois = []
 
-        self.ircd.new_sync(self.ircd, client, ' '.join(recv))
+        self.ircd.new_sync(client, ' '.join(recv))

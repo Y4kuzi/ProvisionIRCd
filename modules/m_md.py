@@ -24,4 +24,4 @@ class Md(ircd.Command):
                 user[0].operaccount = recv[5][1:]
                 # print('Oper account for remote user {} set: {}'.format(user[0].nickname, user[0].operaccount))
 
-        self.ircd.new_sync(self.ircd, client, ' '.join(recv))
+        self.ircd.new_sync(client, ' '.join(recv))

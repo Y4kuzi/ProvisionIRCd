@@ -100,7 +100,7 @@ class Topic(ircd.Command):
 
                 if channel.name[0] != '&':
                     data = ':{} TOPIC {} {} {} :{}'.format(sourceID, channel.name, channel.topic_author, channel.topic_time, channel.topic)
-                    self.ircd.new_sync(self.ircd, sourceServer, data)
+                    self.ircd.new_sync(sourceServer, data)
                 save_db(self.ircd)
 
         except Exception as ex:

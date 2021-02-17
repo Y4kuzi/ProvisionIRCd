@@ -35,7 +35,7 @@ class Sjoin(ircd.Command):
             return client.squit('Sync error! Remote server tried to link local channels.')
 
         if not client.eos:
-            self.ircd.new_sync(self.ircd, client, raw)
+            self.ircd.new_sync(client, raw)
         self.ircd.parammodes = self.ircd.chstatus
         for x in range(0, 4):
             for m in [m for m in self.ircd.channel_modes[x] if str(x) in '012' and m not in self.ircd.parammodes]:

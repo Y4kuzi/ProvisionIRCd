@@ -62,7 +62,7 @@ class Server(ircd.Command):
             if validate_server_info(self, client):
                 selfIntroduction(self.ircd, client)
                 data = ':{} SID {} 1 {} :{}'.format(self.ircd.sid, client.hostname, client.sid, client.name)
-                self.ircd.new_sync(self.ircd, client, data)
+                self.ircd.new_sync(client, data)
                 for server in [server for server in self.ircd.servers if server.sid and server != client and server.eos]:
                     logging.info('Introducing {} to {}'.format(server.hostname, client.hostname))
                     sid = self.ircd.sid if server.socket else server.uplink.sid
@@ -97,7 +97,7 @@ class Sid(ircd.Command):
                 client.name = name
                 selfIntroduction(self.ircd, client)
                 data = ':{} SID {} 1 {} :{}'.format(self.ircd.sid, client.hostname, client.sid, client.name)
-                self.ircd.new_sync(self.ircd, client, data)
+                self.ircd.new_sync(client, data)
                 for server in [server for server in self.ircd.servers if server.sid and server != client and server.eos]:
                     logging.info('Introducing {} to {}'.format(server.hostname, client.hostname))
                     sid = self.ircd.sid if server.socket else server.uplink.sid
@@ -129,4 +129,4 @@ class Sid(ircd.Command):
         logging.info('{}Introduced by: {} ({}) {}'.format(G, newServer.introducedBy.hostname, newServer.introducedBy.sid, W))
         logging.info('{}Uplinked to: {} ({}) {}'.format(G, newServer.uplink.hostname, newServer.uplink.sid, W))
         logging.info('{}Hopcount: {}{}'.format(G, newServer.hopcount, W))
-        self.ircd.new_sync(self.ircd, client, ' '.join(recv))
+        self.ircd.new_sync(client, ' '.join(recv))

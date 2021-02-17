@@ -42,7 +42,7 @@ class Kill(ircd.Command):
             if target[0].socket:
                 target[0].sendraw(self.RPL.TEXT, '{}'.format(':[{}] {}'.format(path, reason)))
             data = ':{} KILL {} :{}'.format(sourceID, target[0].uid, reason)
-            self.ircd.new_sync(self.ircd, client, data)
+            self.ircd.new_sync(client, data)
             target[0].quit(quitmsg, kill=True)
             return
 
@@ -74,5 +74,5 @@ class Kill(ircd.Command):
         quitmsg = '[{}] {} kill by {} ({})'.format(client.server.hostname, 'Local' if target[0].server == self.ircd else 'Global', client.nickname, reason)
         # data = ':{} KILL {} :{}'.format(client.uid, target[0].uid, quitmsg)
         data = ':{} KILL {} :{}'.format(client.uid, target[0].uid, reason)
-        self.ircd.new_sync(self.ircd, client.server, data)
+        self.ircd.new_sync(client.server, data)
         target[0].quit(quitmsg, kill=True)

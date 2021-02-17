@@ -466,7 +466,7 @@ def processModes(self, ircd, channel, recv, sync=True, sourceServer=None, source
                     if oper_override and type(self).__name__ != 'Server':
                         sourceServer.snotice('s', '*** OperOverride by {} ({}@{}) with MODE {} {}'.format(sourceUser.nickname, sourceUser.ident, sourceUser.hostname, channel.name, all_modes))
                     if sync:
-                        ircd.new_sync(ircd, sourceServer, ':{} MODE {} :{}'.format(displaySource, channel.name, all_modes if type(self).__name__ == 'User' else rawModes))
+                        ircd.new_sync(sourceServer, ':{} MODE {} :{}'.format(displaySource, channel.name, all_modes if type(self).__name__ == 'User' else rawModes))
                     sourceUser.broadcast(channel.users, 'MODE {} {}'.format(channel.name, all_modes), source=sourceUser)
                     total_modes, total_params = [action], []
                     continue
@@ -475,7 +475,7 @@ def processModes(self, ircd, channel, recv, sync=True, sourceServer=None, source
                 if oper_override and type(self).__name__ != 'Server':
                     sourceServer.snotice('s', '*** OperOverride by {} ({}@{}) with MODE {} {}'.format(sourceUser.nickname, sourceUser.ident, sourceUser.hostname, channel.name, all_modes))
                 if sync:
-                    ircd.new_sync(ircd, sourceServer, ':{} MODE {} :{}'.format(displaySource, channel.name, all_modes if type(self).__name__ == 'User' else rawModes))
+                    ircd.new_sync(sourceServer, ':{} MODE {} :{}'.format(displaySource, channel.name, all_modes if type(self).__name__ == 'User' else rawModes))
                 sourceUser.broadcast(channel.users, 'MODE {} {}'.format(channel.name, all_modes), source=sourceUser)
 
             for cmd, data in commandQueue:
@@ -771,10 +771,10 @@ def chgumode(client, ircd, recv, override, sourceServer=None, sourceUser=None):
                             if target.operswhois in target.swhois:
                                 target.swhois.remove(target.operswhois)
                             data = ':{} SWHOIS {} :'.format(ircd.sid, target.uid)
-                            ircd.new_sync(ircd, sourceServer, data)
+                            ircd.new_sync(sourceServer, data)
                             for line in target.swhois:
                                 data = ':{} SWHOIS {} :{}'.format(ircd.sid, target.uid, line)
-                                ircd.new_sync(ircd, sourceServer, data)
+                                ircd.new_sync(sourceServer, data)
 
                         target.opermodes = ''
                         client.operaccount = None
@@ -805,12 +805,12 @@ def chgumode(client, ircd, recv, override, sourceServer=None, sourceUser=None):
                 client.sendraw(ircd.ERR.UMODEUNKNOWNFLAG, 'UMODE {} :{}'.format(target.nickname, modes))
 
             if target.server != ircd:
-                ircd.new_sync(ircd, sourceServer, ':{} MODE {} {}'.format(displaySource, target.nickname, modes))
+                ircd.new_sync(sourceServer, ':{} MODE {} {}'.format(displaySource, target.nickname, modes))
             else:
-                ircd.new_sync(ircd, sourceServer, ':{} UMODE2 {}'.format(target.uid, modes))
+                ircd.new_sync(sourceServer, ':{} UMODE2 {}'.format(target.uid, modes))
 
         if 's' in modes or showsno:
-            ircd.new_sync(ircd, sourceServer, ':{} BV +{}'.format(target.uid, target.snomasks))
+            ircd.new_sync(sourceServer, ':{} BV +{}'.format(target.uid, target.snomasks))
             target.sendraw(8, 'Server notice mask (+{})'.format(target.snomasks))
 
         if unknown:

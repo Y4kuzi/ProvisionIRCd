@@ -214,8 +214,8 @@ class User:
                     if not dnsbl_except:
                         DNSBLCheck(self)
 
-                TKL.check(self, self.server, self, 'z')
-                TKL.check(self, self.server, self, 'Z')
+                TKL.check(self.server, self, 'z')
+                TKL.check(self.server, self, 'Z')
 
                 throttleTreshhold = int(self.server.conf['settings']['throttle'].split(':')[0])
                 throttleTime = int(self.server.conf['settings']['throttle'].split(':')[1])
@@ -266,8 +266,8 @@ class User:
                 else:
                     self._send(':{u.server.hostname} NOTICE AUTH :*** Host resolution is disabled, using IP ({u.ip})'.format(u=self))
 
-                TKL.check(self, self.server, self, 'g')
-                TKL.check(self, self.server, self, 'G')
+                TKL.check(self.server, self, 'g')
+                TKL.check(self.server, self, 'G')
 
                 self.cloakhost = cloak(self)
 
@@ -300,14 +300,14 @@ class User:
                         self.ip = params[12]
                     self.realname = ' '.join(params[13:])[1:]
                     self.registered = True
-                    TKL.check(self, self.origin, self, 'Z')
-                    TKL.check(self, self.origin, self, 'G')
+                    TKL.check(self.origin, self, 'Z')
+                    TKL.check(self.origin, self, 'G')
                     if len(self.origin.users) > self.origin.maxgusers:
                         self.origin.maxgusers = len(self.origin.users)
 
-                    for callable in [callable for callable in self.server.hooks if callable[0].lower() == 'remote_connect']:
+                    for callable in [callable for callable in self.origin.hooks if callable[0].lower() == 'remote_connect']:
                         try:
-                            callable[2](self, self.server)
+                            callable[2](self.origin, self)
                         except Exception as ex:
                             logging.exception(ex)
 
@@ -330,7 +330,7 @@ class User:
         try:
             for entry in list(self.recvbuffer):
                 time_to_execute, recv = entry
-                if int(time.time()) >= time_to_execute:
+                if int(time.time()) >= time_to_execute or 'o' in self.modes:
                     self.recvbuffer.remove(entry)
                     recv = recv.rstrip(' \n\r')
                     if not recv:
@@ -421,7 +421,7 @@ class User:
                     if not allow and allow is not None:
                         continue
 
-                    if command.lower() not in ['admin', 'part', 'quit', 'ping', 'pong'] and self.registered and TKL.check(self, self.server, self, 's'):
+                    if command.lower() not in ['admin', 'part', 'quit', 'ping', 'pong'] and self.registered and TKL.check(self.server, self, 's'):
                         return
 
                     false_cmd = True
@@ -562,7 +562,7 @@ class User:
             elif t == 'gecos':
                 cmd = 'SETNAME'
             data = ':{} {} {}'.format(self.uid, cmd, info)
-            self.ircd.new_sync(self.ircd, source, data)
+            self.ircd.new_sync(source, data)
             if t == 'host':
                 self.cloakhost = info
             elif t == 'ident':
@@ -682,7 +682,7 @@ class User:
 
             binip = IPtoBase64(self.ip) if self.ip.replace('.', '').isdigit() else self.ip
             data = '{s.nickname} {s.server.hopcount} {s.signon} {s.ident} {s.hostname} {s.uid} 0 +{s.modes} {s.cloakhost} {s.cloakhost} {0} :{s.realname}'.format(binip, s=self)
-            self.server.new_sync(self.server, self.server, ':{} UID {}'.format(self.server.sid, data))
+            self.server.new_sync(self.server, ':{} UID {}'.format(self.server.sid, data))
 
             self.registered = True
 
@@ -705,7 +705,7 @@ class User:
             if self.fingerprint:
                 self.send('NOTICE', ':*** Your TLS fingerprint is {}'.format(self.fingerprint))
                 data = 'MD client {} certfp :{}'.format(self.uid, self.fingerprint)
-                self.server.new_sync(self.server, self.server, ':{} {}'.format(self.server.sid, data))
+                self.server.new_sync(self.server, ':{} {}'.format(self.server.sid, data))
 
             modes = []
             for mode in self.server.conf['settings']['modesonconnect']:
@@ -815,7 +815,7 @@ class User:
                     if squit:
                         for server in [server for server in ircd.servers if hasattr(server, 'protoctl') and 'NOQUIT' in server.protoctl]:  # and not server.eos]:
                             skip.append(server)
-                    ircd.new_sync(ircd, skip, ':{} QUIT :{}'.format(self.uid, reason))
+                    ircd.new_sync(skip, ':{} QUIT :{}'.format(self.uid, reason))
 
                 if self.socket and reason and not silent:
                     ircd.snotice('c', '*** Client exiting: {} ({}@{}) ({})'.format(self.nickname, self.ident, self.hostname, reason))

@@ -397,7 +397,7 @@ def check_loops(ircd):
         is_silent = False if server.socket else True
         server.quit('Server uplink ping timed out: {} seconds'.format(int(time.time() - server.uplink.ping)))
 
-    for user in ircd.users:
+    for user in [u for u in ircd.users if u.socket]:
         if user.recvbuffer:
             user.handle_recv()
         if user.backbuffer:

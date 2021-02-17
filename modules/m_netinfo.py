@@ -40,8 +40,9 @@ class Netinfo(ircd.Command):
 
         if not source.socket:
             source.netinfo = True
-            # self.ircd.replyPing[source] = True
-            # print('Server {} will now reply to PING requests from {} (NETINFO)'.format(self.ircd.hostname,source.hostname))
+            string = 'Secure ' if source.is_ssl else ''
+            msg = '*** (link) {}Link {} -> {} successfully established'.format(string, source.uplink.hostname, source.hostname)
+            self.ircd.snotice('s', msg, local=True)
             return
 
         remotehost = source.hostname
@@ -68,6 +69,7 @@ class Netinfo(ircd.Command):
         if creation:
             source.creationtime = creation
 
+        logging.debug(f'Received netinfo from: {source}')
         if not source.netinfo:
             source.netinfo = True
             if source not in self.ircd.linkrequester:
@@ -85,4 +87,4 @@ class Netinfo(ircd.Command):
             msg = '*** (link) {}Link {} -> {}[@{}.{}] successfully established'.format(string, self.ircd.hostname, source.hostname, ip, port)
             self.ircd.snotice('s', msg, local=True)
 
-        self.ircd.new_sync(self.ircd, client, ' '.join(recv))
+        self.ircd.new_sync(client, ' '.join(recv))

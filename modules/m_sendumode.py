@@ -16,4 +16,4 @@ class Sendumode(ircd.Command):
         source = list(filter(lambda s: s.sid == recv[0][1:], self.ircd.servers))[0]
         for user in [user for user in self.ircd.users if recv[2] in user.modes and user.socket]:
             source.broadcast([user], 'NOTICE {} {}'.format(user.nickname, ' '.join(recv[3:])))
-        self.ircd.new_sync(self.ircd, client, ' '.join(recv))
+        self.ircd.new_sync(client, ' '.join(recv))

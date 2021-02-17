@@ -20,7 +20,7 @@ class Wallops(ircd.Command):
 
     def execute(self, client, recv):
         if type(client).__name__ == 'Server':
-            originServer = client
+            source = client
             source = list(filter(lambda u: u.uid == recv[0][1:] or u.nickname == recv[0][1:], self.ircd.users))[0]
             sourceID = source.uid
             recv = recv[1:]
@@ -28,7 +28,7 @@ class Wallops(ircd.Command):
         else:
             msg = None
             source = client
-            originServer = client.server
+            source = client.server
             sourceID = client.uid
 
         if not msg:
@@ -37,4 +37,4 @@ class Wallops(ircd.Command):
             user._send(':{}!{}@{} WALLOPS :{}'.format(source.nickname, source.ident, source.cloakhost, msg))
 
         data = ':{} WALLOPS :{}'.format(sourceID, msg)
-        self.ircd.new_sync(self.ircd, originServer, data)
+        self.ircd.new_sync(source, data)

@@ -47,4 +47,4 @@ class Away(ircd.Command):
             user._send(':{} AWAY {}'.format(client.fullmask(), '{}'.format(':' + client.away if client.away else '')))
             updated.append(user)
 
-        self.ircd.new_sync(self.ircd, sourceServer, data)
+        self.ircd.new_sync(sourceServer, data)

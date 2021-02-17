@@ -36,4 +36,4 @@ class Umode2(ircd.Command):
                 elif m == 's':
                     target.snomasks = ''
 
-        self.ircd.new_sync(self.ircd, client, ' '.join(recv))
+        self.ircd.new_sync(client, ' '.join(recv))

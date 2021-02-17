@@ -56,4 +56,4 @@ class Jump(ircd.Command):
         # target._send(data)
         target.sendraw('010', '{} {}'.format(server, port))
         data = ':{} {}'.format(source.uid, ' '.join(recv))
-        self.ircd.new_sync(self.ircd, sourceServer, data)
+        self.ircd.new_sync(sourceServer, data)

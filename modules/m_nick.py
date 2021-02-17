@@ -137,7 +137,7 @@ class Nick(ircd.Command):
                     all_broadcast.remove(u)
 
             client.broadcast(all_broadcast, 'NICK :{}'.format(nick))
-            self.ircd.new_sync(self.ircd, sourceServer, ':{} NICK {} {}'.format(client.uid, nick, int(time.time())))
+            self.ircd.new_sync(sourceServer, ':{} NICK {} {}'.format(client.uid, nick, int(time.time())))
 
             watch_notify_offline = [u for u in self.ircd.users if client.nickname.lower() in [x.lower() for x in u.watchlist]]
             watch_notify_online = [u for u in self.ircd.users if nick.lower() in [x.lower() for x in u.watchlist]]

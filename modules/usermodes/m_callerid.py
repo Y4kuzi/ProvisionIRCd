@@ -108,7 +108,7 @@ class Callerid(ircd.Command):
 
         if sync:
             data = ':{} {}'.format(client.uid, ' '.join(recv))
-            self.ircd.new_sync(self.ircd, client.server, data)
+            self.ircd.new_sync(client.server, data)
 
 
 @ircd.Modules.hooks.server_link()

@@ -250,7 +250,7 @@ class Join(ircd.Command):
 
             if channel.name[0] != '&' and (sourceServer.eos or sourceServer == self.ircd):
                 data = ':{} SJOIN {} {}{} :{}{}'.format(sourceServer.sid, channel.creation, channel.name, ' +{}'.format(channel.modes) if channel.modes and channel.users == [client] else '', prefix, client.uid)
-                self.ircd.new_sync(self.ircd, sourceServer, data)
+                self.ircd.new_sync(sourceServer, data)
 
             if channel.users == [client] and channel.name[0] != '+':
                 sourceServer.handle('MODE', '{} +nt'.format(channel.name))
@@ -348,4 +348,4 @@ class Part(ircd.Command):
                     logging.exception(ex)
 
             if channel.name[0] != '&':
-                self.ircd.new_sync(self.ircd, sourceServer, ':{} PART {} {}'.format(client.uid, channel.name, reason))
+                self.ircd.new_sync(sourceServer, ':{} PART {} {}'.format(client.uid, channel.name, reason))

@@ -29,7 +29,7 @@ class Squit(ircd.Command):
                 logging.error('{}ERROR: server for {} could not be found. Was it already removed?{}'.format(R, recv[2], W))
                 return
             server = server[0]
-            self.ircd.new_sync(self.ircd, client, ' '.join(recv))
+            self.ircd.new_sync(client, ' '.join(recv))
             server.quit(' '.join(recv[3:]), source=source, squit=False)
             return
 

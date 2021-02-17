@@ -43,7 +43,7 @@ class Chgcname(ircd.Command):
         if sourceServer == self.ircd:
             self.ircd.notice(client, 'Channel {} successfully changed to {}'.format(channel.name, name))
 
-        self.ircd.new_sync(self.ircd, sourceServer, ':{} CHGCNAME {} {}'.format(client.uid, channel.name, name))
+        self.ircd.new_sync(sourceServer, ':{} CHGCNAME {} {}'.format(client.uid, channel.name, name))
         old_name = channel.name
         channel.name = name
         if sourceServer == self.ircd:

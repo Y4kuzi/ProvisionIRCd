@@ -90,7 +90,7 @@ class Privmsg(ircd.Command):
 
                 if user.server != self.ircd:
                     data = ':{} PRIVMSG {} :{}'.format(sourceID, user.nickname, msg)
-                    self.ircd.new_sync(self.ircd, sourceServer, data, direct=user.server)
+                    self.ircd.new_sync(sourceServer, data, direct=user.server)
 
 
             else:
@@ -138,7 +138,7 @@ class Privmsg(ircd.Command):
                     client._send(':{} PRIVMSG {} :{}'.format(client.fullmask(), channel.name, msg))
 
                 client.idle = int(time.time())
-                self.ircd.new_sync(self.ircd, sourceServer, ':{} PRIVMSG {} :{}'.format(sourceID, target, msg))
+                self.ircd.new_sync(sourceServer, ':{} PRIVMSG {} :{}'.format(sourceID, target, msg))
 
                 # Check for module hooks (channel messages).
                 if type(client).__name__ == 'User':
@@ -224,7 +224,7 @@ class Notice(ircd.Command):
                         continue
 
                 if user.server != self.ircd:
-                    self.ircd.new_sync(self.ircd, sourceServer, ':{} NOTICE {} :{}'.format(sourceID, target, msg, direct=user.server))
+                    self.ircd.new_sync(sourceServer, ':{} NOTICE {} :{}'.format(sourceID, target, msg, direct=user.server))
                 else:
                     client.broadcast([user], 'NOTICE {} :{}'.format(user.nickname, msg))
 
@@ -267,7 +267,7 @@ class Notice(ircd.Command):
                     client.idle = int(time.time())
 
                 if s_sync:
-                    self.ircd.new_sync(self.ircd, sourceServer, ':{} NOTICE {} :{}'.format(sourceID, target, msg))
+                    self.ircd.new_sync(sourceServer, ':{} NOTICE {} :{}'.format(sourceID, target, msg))
                 else:
                     logging.debug('Not syncing because s_sync: {}'.format(msg))
 

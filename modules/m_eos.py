@@ -24,7 +24,7 @@ class Eos(ircd.Command):
         if source.eos:
             logging.error('ERROR: remote server sent EOS twice!')
             return
-        self.ircd.new_sync(self.ircd, client, ' '.join(recv))
+        self.ircd.new_sync(client, ' '.join(recv))
         for server in [server for server in self.ircd.servers if server.eos]:
             data = ':{} PONG {} {}'.format(source.sid, source.hostname, server.hostname)
             server._send(data)

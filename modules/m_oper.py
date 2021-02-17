@@ -125,8 +125,8 @@ class Oper(ircd.Command):
             self.ircd.snotice('o', msg)
 
             data = ':{} MD client {} operaccount :{}'.format(self.ircd.sid, client.uid, client.operaccount)
-            self.ircd.new_sync(self.ircd, client.server, data)
+            self.ircd.new_sync(client.server, data)
 
             for line in client.swhois:
                 data = ':{} SWHOIS {} :{}'.format(self.ircd.sid, client.uid, line)
-                self.ircd.new_sync(self.ircd, client.server, data)
+                self.ircd.new_sync(client.server, data)

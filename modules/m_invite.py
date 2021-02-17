@@ -100,12 +100,12 @@ class Invite(ircd.Command):
         data = ':{} INVITE {} {}'.format(client.uid, invite_user.nickname, channel.name)
         p = {'s_sync': False}
         self.ircd.handle('NOTICE', '{} :{} ({}@{}) invited {} to join the channel'.format(channel.name, user.nickname, user.ident, user.hostname, invite_user.nickname), params=p)
-        self.ircd.new_sync(self.ircd, sourceServer, data)
+        self.ircd.new_sync(sourceServer, data)
 
 
 @ircd.Modules.hooks.loop()
 def expired_invites(ircd):
-    ### Expire all invites after 6 hours.
+    # Expire all invites after 6 hours.
     for chan in [channel for channel in ircd.channels if len(channel.invites) > 0]:
         for invite in dict(chan.invites):
             if time.time() - chan.invites[invite]['ctime'] > 3600.0 * 6:

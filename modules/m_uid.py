@@ -41,6 +41,6 @@ class Uid(ircd.Command):
                 return
 
         if allow:
-            u = ircd.User(client, server_class=self.ircd, params=params)
+            ircd.User(client, server_class=self.ircd, params=params)
             cmd = ' '.join(recv)
-            self.ircd.new_sync(self.ircd, client, cmd)
+            self.ircd.new_sync(client, cmd)

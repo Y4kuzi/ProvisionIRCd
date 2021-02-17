@@ -61,4 +61,4 @@ class Svsmode(ircd.Command):
             source.handle('mode', '{} {}'.format(target.nickname, modes))
 
         data = ' '.join(recv)
-        self.ircd.new_sync(self.ircd, client, data)
+        self.ircd.new_sync(client, data)

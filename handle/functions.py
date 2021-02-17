@@ -181,7 +181,8 @@ def initlogging(ircd):
 
 
 class TKL:
-    def check(self, ircd, user, type):
+    @staticmethod
+    def check(ircd, user, type):
         try:
             if type not in ircd.tkl:
                 return
@@ -229,19 +230,16 @@ class TKL:
             expire = '0' if float(data[4]) == 0 else int(data[4])
             ctime = int(data[5])
             reason = data[6]
-            user = list(filter(lambda c: c.nickname.lower() == setter.lower(), ircd.users))
             if expire != '0':
                 d = datetime.datetime.fromtimestamp(expire).strftime('%a %b %d %Y')
                 t = datetime.datetime.fromtimestamp(expire).strftime('%H:%M:%S %Z')
             else:
                 d, t = None, None
-            if user:
-                user = user[0]
 
             if not no_snotice and (fullmask not in ircd.tkl[tkltype] or fullmask in ircd.tkl[tkltype] and expire != ircd.tkl[tkltype][fullmask]['expire']):
                 display_mask = fullmask.split('@')[1] if tkltype == 'Q' else fullmask
-                msg = '*** {}TKL {} {} for {} by {} [{}] expires on: {}'.format('Global ' if tkltype in 'GZ' else '', tkltype, 'active' if fullmask not in ircd.tkl[tkltype] else 'updated', display_mask, setter, reason,
-                                                                                'never' if expire == '0' else d + ' ' + t)
+                msg = '*** {}TKL {} {} for {} by {} [{}] expires on: {}'.format('Global ' if tkltype in 'GZ' else '', tkltype, 'active' if fullmask not in ircd.tkl[tkltype] else 'updated',
+                                                                                display_mask, setter, reason, 'never' if expire == '0' else d + ' ' + t)
                 ircd.snotice('G', msg)
 
             if fullmask in ircd.tkl[tkltype]:
@@ -254,11 +252,11 @@ class TKL:
             ircd.tkl[tkltype][fullmask]['reason'] = reason
             ircd.tkl[tkltype][fullmask]['global'] = True if tkltype in 'GZQ' else False
             for user in list(ircd.users):
-                TKL.check(self, ircd, user, tkltype)
+                TKL.check(ircd, user, tkltype)
 
             if tkltype in 'sGZQ':
                 data = ':{} TKL + {} {} {} {} {} {} :{}'.format(ircd.sid, tkltype, ident, mask, setter, expire, ctime, reason)
-                ircd.new_sync(ircd, self, data)
+                ircd.new_sync(self, data)
             save_db(ircd)
             return
 
@@ -277,25 +275,16 @@ class TKL:
             date = date.strip()
             if ident != 'H':  # tkltype == 'Q' and
                 display_mask = fullmask.split('@')[1] if tkltype == 'Q' else fullmask
-                msg = '*** {}{}TKL {} {} removed (set by {} on {}) [{}]'.format('Expiring ' if expire else '', 'Global ' if tkltype in 'GZ' else '', tkltype, display_mask, ircd.tkl[tkltype][fullmask]['setter'], date,
-                                                                                ircd.tkl[tkltype][fullmask]['reason'])
+                msg = '*** {}{}TKL {} {} removed (set by {} on {}) [{}]'.format('Expiring ' if expire else '', 'Global ' if tkltype in 'GZ' else '', tkltype, display_mask,
+                                                                                ircd.tkl[tkltype][fullmask]['setter'], date, ircd.tkl[tkltype][fullmask]['reason'])
                 ircd.snotice('G', msg)
             del ircd.tkl[tkltype][fullmask]
             if tkltype in 'sGZQ' and not expire:
                 data = ':{} TKL - {} {} {}'.format(ircd.sid, tkltype, ident, mask)
-                ircd.new_sync(ircd, self, data)
+                ircd.new_sync(self, data)
             save_db(ircd)
         except Exception as ex:
             logging.exception(ex)
-
-
-def write(line):
-    line = line.replace('[0m', '')
-    line = line.replace('[32m', '')
-    line = line.replace('[33m', '')
-    line = line.replace('[34m', '')
-    line = line.replace('[35m', '')
-    logging.debug(line)
 
 
 def is_match(first, second):

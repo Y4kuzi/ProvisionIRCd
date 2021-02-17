@@ -322,7 +322,8 @@ class Server:
             self.linkpass = None
             self.cls = None
             self.is_ssl = is_ssl
-            self.recvbuffer = ''
+            self.recvbuffer = []
+            self.backbuffer = []
             self.name = ''
             self.hostname = ''
             self.ping = int(time.time())
@@ -338,7 +339,7 @@ class Server:
     def fileno(self):
         return self.socket.fileno()
 
-    def new_sync(self, ircd, skip, data, direct=None):
+    def new_sync(self, skip, data, direct=None):
         try:
             if type(skip) != list:
                 skip = [skip]
@@ -357,11 +358,11 @@ class Server:
                 dest._send(data)
                 return
 
-            for server in [server for server in ircd.servers if server and server.socket and server not in skip]:
+            for server in [server for server in self.servers if server and server.socket and server not in skip]:
                 if not server.eos:
-                    if server not in ircd.sync_queue:
-                        ircd.sync_queue[server] = []
-                    ircd.sync_queue[server].append(data)
+                    if server not in self.sync_queue:
+                        self.sync_queue[server] = []
+                    self.sync_queue[server].append(data)
                     logging.debug('{}Added to {} sync queue because they are not done syncing: {}{}'.format(R2, server, data, W))
                     continue
                 server._send(data)
@@ -400,14 +401,14 @@ class Server:
             logging.exception(ex)
 
     def handle_recv(self):
-        while self.recvbuffer.find("\n") != -1:
-            try:
-                recv = self.recvbuffer[:self.recvbuffer.find("\n")]
-                self.recvbuffer = self.recvbuffer[self.recvbuffer.find("\n") + 1:]
+        for entry in list(self.recvbuffer):
+            time_to_execute, recv = entry
+            if True:
+                self.recvbuffer.remove(entry)
                 recvNoStrip = recv.replace('\r', '').split(' ')
                 recv = recv.split()
                 if not recv:
-                    self.recvbuffer = ''
+                    self.recvbuffer = []
                     continue
                 raw = ' '.join(recv)
                 command = recv[0].lower()
@@ -494,7 +495,7 @@ class Server:
                         if command == 'BW':
                             source[0]._send(':{} MODE +s :{}'.format(source[0].server.hostname, recv[2:]))
                             source[0].sendraw(8, 'Server notice mask (+{})'.format(source[0].snomasks))
-                        localServer.new_sync(localServer, self, raw)
+                        localServer.new_sync(self, raw)
 
                     c = next((x for x in localServer.command_class if command.upper() in list(x.command)), None)
                     if c:
@@ -520,10 +521,6 @@ class Server:
                                 c.execute(self, recvNoStrip)
                             except Exception as ex:
                                 logging.exception(ex)
-
-            except Exception as ex:
-                logging.exception(ex)
-                self.quit(str(ex))
 
     def chlevel(self, channel):
         return 10000
@@ -556,30 +553,34 @@ class Server:
                     skip = [self]
                     if self.uplink:
                         skip.append(self.uplink)
-                    localServer.new_sync(localServer, skip, ':{} SQUIT {} :{}'.format(localServer.sid, self.hostname, reason))
+                    localServer.new_sync(skip, ':{} SQUIT {} :{}'.format(localServer.sid, self.hostname, reason))
 
-            if not silent and self.hostname and self.socket:
-                try:
-                    ip, port = self.socket.getpeername()
-                except:
-                    ip, port = self.socket.getsockname()
-                t = 0
-                placeholder = ''
-                if self.eos and self.netinfo:
-                    placeholder = "Lost connection to"
-                    t = 1
-                elif self.hostname in localServer.pendingLinks:
-                    placeholder = "Unable to connect to"
-                    t = 2
-                elif not self.eos:  # and 'link' in localServer.conf and self.hostname in localServer.conf['link']:
-                    placeholder = "Link denied for"
-                    t = 3
-                if placeholder:
-                    msg = '*** {} server {}[{}:{}]: {}'.format(placeholder, self.hostname, ip, port, reason)
-                    localServer.snotice('s', msg, local=True)
+            if not silent and self.hostname:
+                if self.socket:
+                    try:
+                        ip, port = self.socket.getpeername()
+                    except:
+                        ip, port = self.socket.getsockname()
+                    t = 0
+                    placeholder = ''
+                    if self.eos and self.netinfo:
+                        placeholder = "Lost connection to"
+                        t = 1
+                    elif self.hostname in localServer.pendingLinks:
+                        placeholder = "Unable to connect to"
+                        t = 2
+                    elif not self.eos:  # and 'link' in localServer.conf and self.hostname in localServer.conf['link']:
+                        placeholder = "Link denied for"
+                        t = 3
+                    if placeholder:
+                        msg = '*** {} server {}[{}:{}]: {}'.format(placeholder, self.hostname, ip, port, reason)
+                        localServer.snotice('s', msg, local=True)
 
-                if self.is_ssl and t == 2:
-                    localServer.snotice('s', '*** Make sure TLS is enabled on both ends and ports are listening for TLS connections.', local=True)
+                    if self.is_ssl and t == 2:
+                        localServer.snotice('s', '*** Make sure TLS is enabled on both ends and ports are listening for TLS connections.', local=True)
+                else:
+                    string = f"*** Server {self.uplink.hostname} lost connection to {self.hostname}: {reason}"
+                    self.snotice('s', string)
 
             if self in localServer.linkrequester:
                 del localServer.linkrequester[self]
@@ -728,7 +729,7 @@ class Server:
                 if sno == 'c':
                     sno = 'C'
                 data = '@{} Ss {} :{}'.format(self.hostname, sno, msg)
-                localServer.new_sync(localServer, self, data)
+                localServer.new_sync(self, data)
 
         except Exception as ex:
             logging.exception(ex)
