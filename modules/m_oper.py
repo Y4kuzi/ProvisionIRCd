@@ -10,7 +10,7 @@ try:
     import bcrypt
 except ImportError:
     pass
-from handle.functions import match, logging
+from handle.functions import is_match, logging
 
 
 class Oper(ircd.Command):
@@ -64,7 +64,7 @@ class Oper(ircd.Command):
         selfhost = client.fullrealhost().split('!')[1]
         hostMatch = False
         for host in self.ircd.conf['opers'][recv[1]]['host']:
-            if match(host, selfhost):
+            if is_match(host, selfhost):
                 hostMatch = True
                 break
 

@@ -46,7 +46,7 @@ class Motd(ircd.Command):
                     server_exists = [server for server in self.ircd.servers if server.hostname.lower() == remoteserver]
                     if not server_exists and remoteserver != self.ircd.hostname:
                         return client.sendraw(402, '{} :No such server'.format(remoteserver))
-                    if not server_exists[0].socket:  ### Will fix hops later.
+                    if not server_exists[0].socket:  # Will fix hops later.
                         return self.ircd.notice(client, '* You can only request remote MOTDs from directly linked servers.')
                     if 'o' not in client.modes:
                         client.flood_penalty += 50000

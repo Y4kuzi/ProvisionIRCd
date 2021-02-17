@@ -27,7 +27,7 @@ import re
 import time
 
 import ircd
-from handle.functions import match, logging, make_mask
+from handle.functions import is_match, logging, make_mask
 from modules.m_joinpart import checkMatch
 
 ext_bans = ['L', 'T', 't', 'c', 'O', 'a', 'b']
@@ -60,7 +60,7 @@ def checkExtMatch(type, action, channel, msg):
                     char = m.split(':')[0]
                     if rep_char_block and char_repeat(msg, char, rep_char_block):
                         return True
-                    block = match(m.lower(), msg.lower()) or m.lower() in msg.lower().split()
+                    block = is_match(m.lower(), msg.lower()) or m.lower() in msg.lower().split()
                     if not rep_char_block and block:
                         return True
 
@@ -95,7 +95,7 @@ def checkExtMatch(type, action, channel, msg):
                             replaceWith = replaceWith.replace('_', ' ')
                             word = regex.sub('', word)
                             tempWord = word.lower()
-                            if match(search.lower(), tempWord) or search.lower() == tempWord:
+                            if is_match(search.lower(), tempWord) or search.lower() == tempWord:
                                 temp = search.replace('*', '')
                                 if word.isupper():
                                     temp = temp.upper()
@@ -295,11 +295,11 @@ def join(self, localServer, channel, **kwargs):
                 # Redirect channel does not exist
                 pass
             redir = 0
-            if match(redirect_host, '{}!{}@{}'.format(self.nickname, self.ident, self.hostname)):
+            if is_match(redirect_host, '{}!{}@{}'.format(self.nickname, self.ident, self.hostname)):
                 redir = 1
-            if match(redirect_host, '{}!{}@{}'.format(self.nickname, self.ident, self.ip)):
+            if is_match(redirect_host, '{}!{}@{}'.format(self.nickname, self.ident, self.ip)):
                 redir = 1
-            if match(redirect_host, '{}!{}@{}'.format(self.nickname, self.ident, self.cloakhost)):
+            if is_match(redirect_host, '{}!{}@{}'.format(self.nickname, self.ident, self.cloakhost)):
                 redir = 1
             if redir:
                 self.handle('JOIN', redirect_chan)
@@ -309,11 +309,11 @@ def join(self, localServer, channel, **kwargs):
         for b in [b for b in channel.bans if b[:2] == '~t' and not invite_override and not checkMatch(self, localServer, 'e', channel)]:
             mask = b.split(':')[2]
             ban = 0
-            if match(mask, '{}!{}@{}'.format(self.nickname, self.ident, self.hostname)):
+            if is_match(mask, '{}!{}@{}'.format(self.nickname, self.ident, self.hostname)):
                 ban = 1
-            if match(mask, '{}!{}@{}'.format(self.nickname, self.ident, self.ip)):
+            if is_match(mask, '{}!{}@{}'.format(self.nickname, self.ident, self.ip)):
                 ban = 1
-            if match(mask, '{}!{}@{}'.format(self.nickname, self.ident, self.cloakhost)):
+            if is_match(mask, '{}!{}@{}'.format(self.nickname, self.ident, self.cloakhost)):
                 ban = 1
             if ban:
                 self.sendraw(474, '{} :Cannot join channel (+b)'.format(channel.name))
@@ -322,12 +322,12 @@ def join(self, localServer, channel, **kwargs):
         for i in channel.invex:
             if i.startswith('~O'):
                 oper_class = i.split(':')[1]
-                if 'i' in channel.modes and ('o' in self.modes and (hasattr(self, 'operclass') and match(oper_class, self.operclass))) and 'i' not in overrides:
+                if 'i' in channel.modes and ('o' in self.modes and (hasattr(self, 'operclass') and is_match(oper_class, self.operclass))) and 'i' not in overrides:
                     overrides.append('i')
 
             if i.startswith('~a'):
                 account = i.split(':')[1]
-                if 'i' in channel.modes and ('r' in self.modes and (hasattr(self, 'svid') and match(account, self.svid))) and 'b' not in overrides:
+                if 'i' in channel.modes and ('r' in self.modes and (hasattr(self, 'svid') and is_match(account, self.svid))) and 'b' not in overrides:
                     overrides.append('i')
 
             if i.startswith('~c'):
@@ -351,7 +351,7 @@ def join(self, localServer, channel, **kwargs):
         for e in channel.excepts:
             if e.startswith('~a'):
                 account = e.split(':')[1]
-                if ('r' in self.modes and (hasattr(self, 'svid') and match(account, self.svid))) and 'b' not in overrides:
+                if ('r' in self.modes and (hasattr(self, 'svid') and is_match(account, self.svid))) and 'b' not in overrides:
                     overrides.append('b')
             if e.startswith('~c'):
                 chan_ban = e.split(':')[1]
@@ -374,13 +374,13 @@ def join(self, localServer, channel, **kwargs):
         for b in channel.bans:
             if b.startswith('~a'):
                 account = b.split(':')[1]
-                if ('r' in self.modes and (hasattr(self, 'svid') and match(account, self.svid))) and 'b' not in overrides:
+                if ('r' in self.modes and (hasattr(self, 'svid') and is_match(account, self.svid))) and 'b' not in overrides:
                     self.sendraw(474, '{} :Cannot join channel (+b)'.format(channel.name))
                     return False, overrides
             if b.startswith('~b'):
                 exemp = b.split(':')[1]
                 host = b.split(':')[2]
-                if match(host, self.fullmask()) and (exemp == 'R' and 'r' not in self.modes and 'b' not in overrides):
+                if is_match(host, self.fullmask()) and (exemp == 'R' and 'r' not in self.modes and 'b' not in overrides):
                     self.sendraw(474, '{} :Cannot join channel (+b)'.format(channel.name))
                     return False, overrides
 

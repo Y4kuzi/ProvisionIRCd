@@ -1,4 +1,4 @@
-from handle.functions import (match,
+from handle.functions import (is_match,
                               TKL,
                               cloak,
                               IPtoBase64,
@@ -17,6 +17,7 @@ import threading
 import hashlib
 import select
 import ipaddress
+from math import floor
 
 try:
     import objgraph
@@ -119,12 +120,12 @@ def resolve_ip(self):
     deny_except = False
     if 'except' in self.server.conf and 'deny' in self.server.conf['except']:
         for e in self.server.conf['except']['deny']:
-            if match(e, self.ident + '@' + ip_resolved):
+            if is_match(e, self.ident + '@' + ip_resolved):
                 deny_except = True
                 break
     if not deny_except:
         for entry in self.server.deny:
-            if match(entry, self.ident + '@' + ip_resolved):
+            if is_match(entry, self.ident + '@' + ip_resolved):
                 self.server.deny_cache[ip] = {}
                 self.server.deny_cache[ip]['ctime'] = int(time.time())
                 self.server.deny_cache[ip]['reason'] = self.server.deny[entry] if self.server.deny[entry] else ''
@@ -151,7 +152,9 @@ class User:
             self.snomasks = ''
             self.swhois = []
             self.watchlist = []
+            self.monlist = []
             self.caplist = []
+            self.backbuffer = []
             self.sends_cap = False
             self.cap_end = False
             self.watchC = False
@@ -183,7 +186,7 @@ class User:
                 self.signon = int(time.time())
                 self.registered = False
                 self.ping = int(time.time())
-                self.recvbuffer = ''
+                self.recvbuffer = []
                 self.validping = False
                 self.server_pass_accepted = False
                 self.uid = '{}{}'.format(self.server.sid, ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6)))
@@ -205,7 +208,7 @@ class User:
                     dnsbl_except = False
                     if 'except' in self.server.conf and 'dnsbl' in self.server.conf['except']:
                         for e in self.server.conf['except']['dnsbl']:
-                            if match(e, self.ip):
+                            if is_match(e, self.ip):
                                 dnsbl_except = True
                                 break
                     if not dnsbl_except:
@@ -220,7 +223,7 @@ class User:
                 throttle_except = False
                 if 'except' in self.server.conf and 'throttle' in self.server.conf['except']:
                     for e in self.server.conf['except']['throttle']:
-                        if match(e, self.ip):
+                        if is_match(e, self.ip):
                             throttle_except = True
                             break
                 if len(total_conns) >= throttleTreshhold and not throttle_except:
@@ -302,6 +305,12 @@ class User:
                     if len(self.origin.users) > self.origin.maxgusers:
                         self.origin.maxgusers = len(self.origin.users)
 
+                    for callable in [callable for callable in self.server.hooks if callable[0].lower() == 'remote_connect']:
+                        try:
+                            callable[2](self, self.server)
+                        except Exception as ex:
+                            logging.exception(ex)
+
                     watch_notify = iter([user for user in self.origin.users if self.nickname.lower() in [x.lower() for x in user.watchlist]])
                     for user in watch_notify:
                         user.sendraw(RPL.LOGON, '{} {} {} {} :logged online'.format(self.nickname, self.ident, self.cloakhost, self.signon))
@@ -315,113 +324,116 @@ class User:
             logging.exception(ex)
 
     def handle_recv(self):
+        # if self.backbuffer and len(self.backbuffer) >= 10:
+        #    logging.debug(f'Do not process for {self}')
+        #    return
         try:
-            while self.recvbuffer.find('\n') != -1:
-                recv = self.recvbuffer[:self.recvbuffer.find('\n')]
-                self.recvbuffer = self.recvbuffer[self.recvbuffer.find('\n') + 1:]
-                recv = recv.rstrip(' \n\r')
-                if not recv:
-                    continue
-
-                ircd = self.server
-                command = recv.split()[0].lower()
-
-                self.ping = int(time.time())
-                if not hasattr(self, 'flood_safe') or not self.flood_safe:
-                    self.flood_penalty += 1000 + len(recv)
-                check_flood(ircd, self)
-
-                if not self.flood_penalty_time:
-                    self.flood_penalty_time = int(time.time())
-
-                dont_parse = ['topic', 'swhois', 'prop']
-                if command in dont_parse:
-                    parsed = recv.split(' ')
-                else:
-                    parsed = self.parse_command(recv)
-
-                pre_reg_cmds = ['nick', 'user', 'pass', 'pong', 'cap', 'starttls', 'webirc']
-
-                if not self.registered and self.cls and not self.server_pass_accepted and 'password' in ircd.conf['allow'][self.cls] and command not in ['pass', 'cap']:
-                    return self.quit('Password required')
-
-                ignore = ['ping', 'pong', 'ison', 'watch', 'who', 'privmsg', 'notice', 'ns', 'cs', 'nickserv', 'chanserv', 'id', 'identify', 'login', 'auth']
-                # ignore = []
-                if command not in ignore:
-                    pass
-
-                # Looking for API calls.
-                if not self.registered:
-                    for callable in [callable for callable in self.server.api if callable[0].lower() == command]:
-                        api_func = callable[1]
-                        api_host = callable[2]
-                        api_password = callable[3]
-                        if api_host and not match(api_host, self.ip):
-                            self.quit('API', api=True)
-                            break
-                        if api_password and recv[1] != api_password:
-                            self.quit('API', api=True)
-                            break
-                        api_func(self, ircd, parsed)
-                        self.quit('API', api=True)
-                        return
-
-                # print('ik ga zo slaaaaaapen maar jij bent ernie?')
-                if type(self).__name__ == 'User' and command not in pre_reg_cmds and not self.registered:
-                    return self.sendraw(ERR.NOTREGISTERED, 'You have not registered')
-                if command == 'pong':
-                    if self in self.server.pings:
-                        ping = recv.split()[1]
-                        if ping.startswith(':'):
-                            ping = ping[1:]
-                        if self.server.pings[self] == ping:
-                            del self.server.pings[self]
-                            self.validping = True
-                            if self.ident != '' and self.nickname != '*' and (self.cap_end or not self.sends_cap):
-                                self.welcome()
-                        else:
-                            return self.quit('Unauthorized connection')
-
-                try:
-                    cmd = importlib.import_module('cmds.cmd_' + command.lower())
-                    getattr(cmd, 'cmd_' + command.upper())(self, ircd, parsed)
-                    continue
-                except ImportError:
-                    try:
-                        alias = ircd.conf['aliases']
-                        if alias[command.lower()]['type'] == 'services':
-                            service = list(filter(lambda u: u.nickname == alias[command.lower()]['target'] and 'services' in ircd.conf['settings'] and u.server.hostname == ircd.conf['settings']['services'], ircd.users))
-                            if not service:
-                                return self.sendraw(ERR.SERVICESDOWN, ':Services are currently down. Please try again later.')
-                        data = '{} :{}'.format(alias[command.lower()]['target'], ' '.join(recv.split()[1:]))
-                        self.handle('PRIVMSG', data)
+            for entry in list(self.recvbuffer):
+                time_to_execute, recv = entry
+                if int(time.time()) >= time_to_execute:
+                    self.recvbuffer.remove(entry)
+                    recv = recv.rstrip(' \n\r')
+                    if not recv:
                         continue
-                    except KeyError:
+
+                    ircd = self.server
+                    command = recv.split()[0].lower()
+                    self.ping = int(time.time())
+                    if not hasattr(self, 'flood_safe') or not self.flood_safe:
+                        self.flood_penalty += 1000 + len(recv)
+                    check_flood(ircd, self)
+
+                    if not self.flood_penalty_time:
+                        self.flood_penalty_time = int(time.time())
+
+                    dont_parse = ['topic', 'swhois', 'prop']
+                    if command in dont_parse:
+                        parsed = recv.split(' ')
+                    else:
+                        parsed = self.parse_command(recv)
+
+                    pre_reg_cmds = ['nick', 'user', 'pass', 'pong', 'cap', 'starttls', 'webirc']
+
+                    if not self.registered and self.cls and not self.server_pass_accepted and 'password' in ircd.conf['allow'][self.cls] and command not in ['pass', 'cap']:
+                        return self.quit('Password required')
+
+                    ignore = ['ping', 'pong', 'ison', 'watch', 'who', 'privmsg', 'notice', 'ns', 'cs', 'nickserv', 'chanserv', 'id', 'identify', 'login', 'auth']
+                    # ignore = []
+                    if command not in ignore:
                         pass
 
-                # pre_command hook.
-                allow = 1
-                for callable in [callable for callable in self.server.hooks if callable[0].lower() == 'pre_command' and callable[1].lower() == command.lower()]:
+                    # Looking for API calls.
+                    if not self.registered:
+                        for callable in [callable for callable in self.server.api if callable[0].lower() == command]:
+                            api_func = callable[1]
+                            api_host = callable[2]
+                            api_password = callable[3]
+                            if api_host and not is_match(api_host, self.ip):
+                                self.quit('API', api=True)
+                                break
+                            if api_password and recv[1] != api_password:
+                                self.quit('API', api=True)
+                                break
+                            api_func(self, ircd, parsed)
+                            self.quit('API', api=True)
+                            return
+
+                    # print('ik ga zo slaaaaaapen maar jij bent ernie?')
+                    if type(self).__name__ == 'User' and command not in pre_reg_cmds and not self.registered:
+                        return self.sendraw(ERR.NOTREGISTERED, 'You have not registered')
+                    if command == 'pong':
+                        if self in self.server.pings:
+                            ping = recv.split()[1]
+                            if ping.startswith(':'):
+                                ping = ping[1:]
+                            if self.server.pings[self] == ping:
+                                del self.server.pings[self]
+                                self.validping = True
+                                if self.ident != '' and self.nickname != '*' and (self.cap_end or not self.sends_cap):
+                                    self.welcome()
+                            else:
+                                return self.quit('Unauthorized connection')
+
                     try:
-                        allow = callable[2](self, ircd, parsed)
-                    except Exception as ex:
-                        logging.exception(ex)
-                if not allow and allow is not None:
-                    continue
+                        cmd = importlib.import_module('cmds.cmd_' + command.lower())
+                        getattr(cmd, 'cmd_' + command.upper())(self, ircd, parsed)
+                        continue
+                    except ImportError:
+                        try:
+                            alias = ircd.conf['aliases']
+                            if alias[command.lower()]['type'] == 'services':
+                                service = list(filter(lambda u: u.nickname == alias[command.lower()]['target'] and 'services' in ircd.conf['settings'] and u.server.hostname == ircd.conf['settings']['services'], ircd.users))
+                                if not service:
+                                    return self.sendraw(ERR.SERVICESDOWN, ':Services are currently down. Please try again later.')
+                            data = '{} :{}'.format(alias[command.lower()]['target'], ' '.join(recv.split()[1:]))
+                            self.handle('PRIVMSG', data)
+                            continue
+                        except KeyError:
+                            pass
 
-                if command.lower() not in ['admin', 'part', 'quit', 'ping', 'pong'] and self.registered and TKL.check(self, self.server, self, 's'):
-                    return
+                    # pre_command hook.
+                    allow = 1
+                    for callable in [callable for callable in self.server.hooks if callable[0].lower() == 'pre_command' and callable[1].lower() == command.lower()]:
+                        try:
+                            allow = callable[2](self, ircd, parsed)
+                        except Exception as ex:
+                            logging.exception(ex)
+                    if not allow and allow is not None:
+                        continue
 
-                false_cmd = True
-                c = next((x for x in ircd.command_class if command.upper() in list(x.command)), None)
-                if c:
-                    false_cmd = False
-                    if c.check(self, parsed):
-                        c.execute(self, parsed)  # <--- instant reply from /stats u (where psutil.Process() is being called)
-                        # threading.Thread(target=c.execute, args=([self, parsed])).start() # ~1 second delay in /stats u
+                    if command.lower() not in ['admin', 'part', 'quit', 'ping', 'pong'] and self.registered and TKL.check(self, self.server, self, 's'):
+                        return
 
-                if false_cmd:
-                    self.sendraw(ERR.UNKNOWNCOMMAND, '{} :Unknown command'.format(command.upper()))
+                    false_cmd = True
+                    c = next((x for x in ircd.command_class if command.upper() in list(x.command)), None)
+                    if c:
+                        false_cmd = False
+                        if c.check(self, parsed):
+                            c.execute(self, parsed)  # <--- instant reply from /stats u (where psutil.Process() is being called)
+                            # threading.Thread(target=c.execute, args=([self, parsed])).start() # ~1 second delay in /stats u
+
+                    if false_cmd:
+                        self.sendraw(ERR.UNKNOWNCOMMAND, '{} :Unknown command'.format(command.upper()))
 
         except Exception as ex:
             logging.exception(ex)
@@ -452,7 +464,44 @@ class User:
     def send(self, command, data):
         if not self.socket:
             return
-        self._send(':{} {} {} {}'.format(self.server.hostname, command, self.nickname, data))
+
+        # full_data = f':{self.server.hostname} {command} {self.nickname} {data}'
+        # self._send(full_data)
+        # return
+
+        # Experimental. Comment out above 3 lines in case of issues.
+        def send_data():
+            data = ' '.join(buffer).split(data_prefix)[1].lstrip()
+            if prepend_colon and not data[0].startswith(':'):
+                data = ':' + ''.join(data).lstrip()
+            full_data = data_prefix + data
+            if len(full_data) >= max_buff:
+                full_data = full_data[:max_buff]
+                # logging.debug(f'Sending data trimmed: {len(full_data)}')
+            self._send(full_data)
+
+        max_buff = 510  # 2 reserved for \r\n
+        full_data = f':{self.server.hostname} {command} {self.nickname} {data}'
+        data_prefix = full_data.split(data)[0]  # .rstrip()
+        prepend_colon = True if data.startswith(':') else False
+        buffer = []
+        for i, word in enumerate(full_data.split()):
+            buffer.append(word)
+            buffer_size = len(' '.join(buffer))
+            if len(full_data.split()) > i + 1:
+                next_buffer_size = buffer_size + len(full_data.split()[i + 1])
+                if next_buffer_size >= max_buff:
+                    if buffer == data_prefix.rstrip().split():  # Original line was too long.
+                        buffer = [full_data]
+                    send_data()
+                    if buffer != [full_data]:
+                        buffer = [data_prefix]
+                    else:
+                        buffer = []
+                        break
+                    continue
+        if buffer:
+            send_data()
 
     def sendraw(self, numeric, data):
         if type(numeric).__name__ in ['RPL', 'ERR']:
@@ -527,7 +576,7 @@ class User:
         if not self.registered:
             for callable in [callable for callable in self.server.hooks if callable[0].lower() == 'pre_local_connect']:
                 try:
-                    success = callable[2](self, self.server)
+                    success = callable[2](self.server, self)
                     if not success and success is not None:  # Modules need to explicitly return False or 0, not the default None.
                         logging.debug(f"Connection process denied for user {self} by module: {callable}")
                         return
@@ -543,13 +592,13 @@ class User:
             deny_except = False
             if 'except' in self.server.conf and 'deny' in self.server.conf['except']:
                 for e in self.server.conf['except']['deny']:
-                    if match(e, self.ident + '@' + self.ip) or match(e, self.ident + '@' + self.hostname):
+                    if is_match(e, self.ident + '@' + self.ip) or is_match(e, self.ident + '@' + self.hostname):
                         deny_except = True
                         break
 
             if not deny_except and not deny:
                 for entry in self.server.deny:
-                    if match(entry, self.ident + '@' + self.ip) or match(entry, self.ident + '@' + self.hostname):
+                    if is_match(entry, self.ident + '@' + self.ip) or is_match(entry, self.ident + '@' + self.hostname):
                         self.server.deny_cache[self.ip] = {}
                         self.server.deny_cache[self.ip]['ctime'] = int(time.time())
                         reason = self.server.deny[entry] if self.server.deny[entry] else ''
@@ -569,10 +618,10 @@ class User:
                 isMatch = False
                 if 'ip' in t:
                     clientmask = '{}@{}'.format(self.ident, self.ip)
-                    isMatch = match(t['ip'], clientmask)
+                    isMatch = is_match(t['ip'], clientmask)
                 if 'hostname' in t and not isMatch:  # Try with hostname. IP has higher priority.
                     clientmask = '{}@{}'.format(self.ident, self.hostname)
-                    isMatch = match(t['hostname'], clientmask)
+                    isMatch = is_match(t['hostname'], clientmask)
                 if isMatch:
                     if 'options' in t:
                         if 'ssl' in t['options'] and not self.ssl:
@@ -582,7 +631,7 @@ class User:
                         for entry in t['block']:
                             clientmask_ip = '{}@{}'.format(self.ident, self.ip)
                             clientmask_host = '{}@{}'.format(self.ident, self.hostname)
-                            block = match(entry, clientmask_ip) or match(entry, clientmask_host)
+                            block = is_match(entry, clientmask_ip) or is_match(entry, clientmask_host)
                             if block:
                                 logging.info('Client {} blocked by {}: {}'.format(self, cls, entry))
                                 break
@@ -674,7 +723,7 @@ class User:
 
             for callable in [callable for callable in self.server.hooks if callable[0].lower() == 'local_connect']:
                 try:
-                    callable[2](self, self.server)
+                    callable[2](self.server, self)
                 except Exception as ex:
                     logging.exception(ex)
 
@@ -724,7 +773,8 @@ class User:
         try:
             if not hasattr(self, 'socket'):
                 self.socket = None
-            self.recvbuffer = ''
+            self.recvbuffer = []
+            self.backbuffer = []
             ircd = self.ircd if not self.socket else self.server
             sourceServer = self.server if (self.server.socket or self.server == ircd) else self.server.uplink
             if self.registered:
@@ -838,7 +888,7 @@ class User:
             hook = 'local_quit' if self.server == ircd else 'remote_quit'
             for callable in [callable for callable in ircd.hooks if callable[0].lower() == hook]:
                 try:
-                    callable[2](self, ircd)
+                    callable[2](ircd, self)
                 except Exception as ex:
                     logging.exception(ex)
 

@@ -97,23 +97,23 @@ def chmode_H2(self, localServer, channel, modebuf, parambuf, action, modebar, pa
 
 
 @ircd.Modules.hooks.local_join()
-def show_history(self, localServer, channel):
+def show_history(self, ircd, channel):
     if chmode in channel.modes and channel.msg_backlog['lines']:
         show = 0
-        if channel not in localServer.m_history:
-            localServer.m_history[channel] = {}
-        if self not in localServer.m_history[channel]:
-            localServer.m_history[channel][self] = {}
-            localServer.m_history[channel][self]['last'] = None
-            localServer.m_history[channel][self]['replay_time'] = int(time.time())
-        if 'replay_time' in localServer.m_history[channel][self] and 'last' in localServer.m_history[channel][self]:
-            if localServer.m_history[channel][self]['last'] != channel.msg_backlog['lines'][-1] or int(time.time()) - localServer.m_history[channel][self]['replay_time'] > 1800:
-                ### New messages for user.
+        if channel not in ircd.m_history:
+            ircd.m_history[channel] = {}
+        if self not in ircd.m_history[channel]:
+            ircd.m_history[channel][self] = {}
+            ircd.m_history[channel][self]['last'] = None
+            ircd.m_history[channel][self]['replay_time'] = int(time.time())
+        if 'replay_time' in ircd.m_history[channel][self] and 'last' in ircd.m_history[channel][self]:
+            if ircd.m_history[channel][self]['last'] != channel.msg_backlog['lines'][-1] or int(time.time()) - ircd.m_history[channel][self]['replay_time'] > 1800:
+                # New messages for user.
                 show = 1
         else:
             show = 1
         if show:
-            self._send(':{} PRIVMSG {} :Displaying backlog for {}'.format(localServer.hostname, channel.name, channel.name))
+            self._send(':{} PRIVMSG {} :Displaying backlog for {}'.format(ircd.hostname, channel.name, channel.name))
             for entry in channel.msg_backlog['lines']:
                 prefix = ''
                 timestamp = int(entry[1] / 10)
@@ -121,15 +121,15 @@ def show_history(self, localServer, channel):
                     prefix = '@time={}.{}Z '.format(time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime(timestamp)), round(entry[1] % 1000))
                 data = '{}:{} PRIVMSG {} :{}'.format(prefix, entry[0], channel.name, entry[2])
                 self._send(data)
-            self._send(':{} PRIVMSG {} :Done displaying last {} messages.'.format(localServer.hostname, channel.name, len(channel.msg_backlog['lines'])))
-            localServer.m_history[channel][self]['replay_time'] = int(time.time())
-            localServer.m_history[channel][self]['last'] = channel.msg_backlog['lines'][-1]
+            self._send(':{} PRIVMSG {} :Done displaying last {} messages.'.format(ircd.hostname, channel.name, len(channel.msg_backlog['lines'])))
+            ircd.m_history[channel][self]['replay_time'] = int(time.time())
+            ircd.m_history[channel][self]['last'] = channel.msg_backlog['lines'][-1]
 
 
 @ircd.Modules.hooks.local_quit()
-def clear_info(ircd, self):
-    for chan in [chan for chan in ircd.channels if chan in ircd.m_history and self in ircd.m_history[chan]]:
-        del ircd.m_history[chan][self]
+def clear_info(ircd, client):
+    for chan in [chan for chan in ircd.channels if chan in ircd.m_history and client in ircd.m_history[chan]]:
+        del ircd.m_history[chan][client]
 
 
 def init(ircd, reload=False):

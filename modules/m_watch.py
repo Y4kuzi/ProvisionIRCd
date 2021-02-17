@@ -25,7 +25,7 @@ class Watch(ircd.Command):
         self.command = 'watch'
         self.support = [('WATCH', MAXWATCH), ('WATCHOPTS', 'A')]
 
-    def execute(self, client, recv, override=False, s_sync=True):
+    def execute(self, client, recv):
         if int(time.time()) - client.signon < 10:
             client.flood_safe = True
         else:

@@ -48,6 +48,12 @@ class RPL(Enum):
     LOGON = 600  # Used by WATCH
     LOGOFF = 601  # Used by WATCH
 
+    MONONLINE = 730
+    MONOFFLINE = 731
+    MONLIST = 732
+    ENDOFMONLIST = 733
+    MONLISTFULL = 734
+
 
 class ERR(Enum):
     NOSUCHNICK = 401

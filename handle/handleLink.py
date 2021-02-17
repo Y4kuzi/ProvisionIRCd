@@ -3,7 +3,7 @@ import threading
 import socket
 import hashlib
 import ssl
-from handle.functions import IPtoBase64, logging, match
+from handle.functions import IPtoBase64, logging, is_match
 
 W = '\033[0m'  # white (normal)
 R = '\033[31m'  # red
@@ -208,7 +208,7 @@ def validate_server_info(self, client):
                 logging.info(f'Link denied for {client.hostname}: incorrect password')
                 return 0
 
-        if not match(self.ircd.conf['link'][client.hostname]['incoming']['host'], ip):
+        if not is_match(self.ircd.conf['link'][client.hostname]['incoming']['host'], ip):
             error = 'Error connecting to server {}[{}:{}]: no matching link configuration'.format(self.ircd.hostname, ip2, port2)
             client._send(':{} ERROR :{}'.format(self.ircd.sid, error))
             client.quit('no matching link configuration')

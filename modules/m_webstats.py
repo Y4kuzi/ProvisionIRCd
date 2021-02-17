@@ -5,7 +5,7 @@ webstats support
 import time
 
 import ircd
-from handle.functions import logging, match
+from handle.functions import logging, is_match
 
 # API calls are special requests that you can send to the server upon establishing a connection.
 # If successful, the IRCd will return a JSON dict with your requested data.
@@ -32,7 +32,7 @@ allowed_ips = {
 @ircd.Modules.api('webstats', '127.0.0.1')
 def process_webstats(self, localServer, recv):
     global allowed_ips
-    ip = [i for i in allowed_ips if match(i, recv[1])]
+    ip = [i for i in allowed_ips if is_match(i, recv[1])]
     if not ip or ip[0] not in allowed_ips:
         return self._send('WEBSTATS 403 You are not allowed to make that API call.')
     if "rate_limit" in allowed_ips[ip[0]]:
@@ -62,7 +62,7 @@ def process_webstats(self, localServer, recv):
 def webstats_ratelimit(localServer):
     global allowed_ips
     for ip in dict(localServer.webstats_ip_requests):
-        rate_ip = [i for i in allowed_ips if match(i, ip)]
+        rate_ip = [i for i in allowed_ips if is_match(i, ip)]
         if not rate_ip:
             logging.debug('Something went wrong. Could not find a rate_limit for IP "{}", removing from dict.'.format(ip))
             del localServer.webstats_ip_requests[ip]
@@ -74,5 +74,4 @@ def webstats_ratelimit(localServer):
 
 
 def init(ircd, reload=False):
-    print('yo')
     ircd.webstats_ip_requests = {}

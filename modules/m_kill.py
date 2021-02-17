@@ -4,7 +4,7 @@
 
 import ircd
 
-from handle.functions import match
+from handle.functions import is_match
 
 
 class Kill(ircd.Command):
@@ -56,7 +56,7 @@ class Kill(ircd.Command):
         if 'except' in self.ircd.conf and 'kill' in self.ircd.conf['except'] and type(client).__name__ != 'Server':
             check_host = '{}@{}'.format(target[0].ident, target[0].hostname)
             for e in self.ircd.conf['except']['kill']:
-                if match(e, check_host):
+                if is_match(e, check_host):
                     self.ircd.notice(client, '*** User {} matches a kill-except ({}) and cannot be killed'.format(target[0].nickname, e))
                     return
 

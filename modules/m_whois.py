@@ -181,26 +181,26 @@ class Whowas(ircd.Command):
 @ircd.Modules.hooks.remote_quit()
 @ircd.Modules.hooks.local_nickchange()
 @ircd.Modules.hooks.remote_nickchange()
-def savewhowas(self, ircd):
+def savewhowas(ircd, client, newnick=None):
     try:
-        if type(self).__name__ == 'Server' or not self.registered:
+        if type(client).__name__ == 'Server' or not client.registered:
             return
         if not hasattr(ircd, 'whowas'):
             ircd.whowas = {}
-        if self.nickname not in ircd.whowas:
-            ircd.whowas[self.nickname] = []
-        whowasInfo = {self.nickname: {}}
-        whowasInfo[self.nickname]['ident'] = self.ident
-        whowasInfo[self.nickname]['cloakhost'] = self.cloakhost
-        whowasInfo[self.nickname]['realname'] = self.realname
-        whowasInfo[self.nickname]['hostname'] = self.hostname
-        whowasInfo[self.nickname]['ip'] = self.ip
-        whowasInfo[self.nickname]['server'] = self.server.hostname
-        whowasInfo[self.nickname]['signoff'] = int(time.time())
+        if client.nickname not in ircd.whowas:
+            ircd.whowas[client.nickname] = []
+        whowasInfo = {client.nickname: {}}
+        whowasInfo[client.nickname]['ident'] = client.ident
+        whowasInfo[client.nickname]['cloakhost'] = client.cloakhost
+        whowasInfo[client.nickname]['realname'] = client.realname
+        whowasInfo[client.nickname]['hostname'] = client.hostname
+        whowasInfo[client.nickname]['ip'] = client.ip
+        whowasInfo[client.nickname]['server'] = client.server.hostname
+        whowasInfo[client.nickname]['signoff'] = int(time.time())
 
-        ircd.whowas[self.nickname].append(whowasInfo[self.nickname])
-        if len(ircd.whowas[self.nickname]) > 12:
-            del ircd.whowas[self.nickname][0]
+        ircd.whowas[client.nickname].append(whowasInfo[client.nickname])
+        if len(ircd.whowas[client.nickname]) > 12:
+            del ircd.whowas[client.nickname][0]
 
         for nick in dict(ircd.whowas):
             info = list(ircd.whowas[nick])

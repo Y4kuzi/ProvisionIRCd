@@ -4,7 +4,7 @@
 
 import ircd
 
-from handle.functions import match, logging
+from handle.functions import is_match, logging
 
 
 class User(ircd.Command):
@@ -40,10 +40,10 @@ class User(ircd.Command):
             isMatch = False
             if 'ip' in t:
                 clientmask = '{}@{}'.format(client.ident, client.ip)
-                isMatch = match(t['ip'], clientmask)
+                isMatch = is_match(t['ip'], clientmask)
             if 'hostname' in t and not isMatch:  # Try with hostname. IP has higher priority.
                 clientmask = '{}@{}'.format(client.ident, client.hostname)
-                isMatch = match(t['hostname'], clientmask)
+                isMatch = is_match(t['hostname'], clientmask)
             if isMatch:
                 if 'options' in t:
                     if 'ssl' in t['options'] and not client.ssl:
@@ -53,7 +53,7 @@ class User(ircd.Command):
                     for entry in t['block']:
                         clientmask_ip = '{}@{}'.format(client.ident, client.ip)
                         clientmask_host = '{}@{}'.format(client.ident, client.hostname)
-                        block = match(entry, clientmask_ip) or match(entry, clientmask_host)
+                        block = is_match(entry, clientmask_ip) or is_match(entry, clientmask_host)
                         if block:
                             logging.info('Client {} blocked by {}: {}'.format(client, cls, entry))
                             break

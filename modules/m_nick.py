@@ -5,7 +5,7 @@
 import time
 
 import ircd
-from handle.functions import match
+from handle.functions import is_match, logging
 
 NICKLEN = 33
 
@@ -53,9 +53,8 @@ class Nick(ircd.Command):
         if nick[0].isdigit():
             return client.sendraw(432, '{} :Erroneous nickname (Invalid: {})'.format(nick, nick[0]))
 
-        valid = 'abcdefghijklmnopqrstuvwxyz0123456789`^-_[]{}|\\'
         for c in nick:
-            if c.lower() not in valid and not override:
+            if c.lower() not in self.ircd.nickchars and not override:
                 return client.sendraw(432, '{} :Erroneous nickname (Invalid: {})'.format(nick, c))
 
         if sanick:
@@ -75,7 +74,7 @@ class Nick(ircd.Command):
 
         if 'Q' in self.ircd.tkl and not override:
             for entry in [entry for entry in self.ircd.tkl['Q'] if entry != '*']:
-                if match(entry.split('@')[1].lower(), nick.lower()):
+                if is_match(entry.split('@')[1].lower(), nick.lower()):
                     client.sendraw(432, '{} :Erroneous nickname ({})'.format(nick, self.ircd.tkl['Q'][entry]['reason']))
                     msg = '*** Q:Line Rejection -- Forbidden nick {} from client {} {}'.format(nick, client.ip, '[Current nick: {}]'.format(client.nickname) if client.nickname != '*' else '')
                     return self.ircd.snotice('Q', msg)
@@ -149,23 +148,23 @@ class Nick(ircd.Command):
 
             for callable in [callable for callable in self.ircd.hooks if callable[0].lower() == hook]:
                 try:
-                    callable[2](client, self.ircd)
+                    callable[2](self.ircd, client, nick)
                 except Exception as ex:
                     logging.exception(ex)
 
-        old = client.nickname
+        prevnick = client.nickname
         client.nickname = nick
 
-        if old == '*' and client.ident != '' and client.validping and (client.cap_end or not client.sends_cap):
+        if prevnick == '*' and client.ident != '' and client.validping and (client.cap_end or not client.sends_cap):
             client.welcome()
 
 
 @ircd.Modules.hooks.loop()
-def expired_nickflood(localServer):
-    if hasattr(localServer, 'nickflood'):
-        for user in [user for user in localServer.users if user in localServer.nickflood]:
-            for nickchg in (nickchg for nickchg in dict(localServer.nickflood[user]) if int(time.time()) - int(nickchg) > int(localServer.conf['settings']['nickflood'].split(':')[1])):
-                del localServer.nickflood[user][nickchg]
+def expired_nickflood(ircd):
+    if hasattr(ircd, 'nickflood'):
+        for user in [user for user in ircd.users if user in ircd.nickflood]:
+            for nickchg in (nickchg for nickchg in dict(ircd.nickflood[user]) if int(time.time()) - int(nickchg) > int(ircd.conf['settings']['nickflood'].split(':')[1])):
+                del ircd.nickflood[user][nickchg]
                 continue
 
 

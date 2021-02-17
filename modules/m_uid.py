@@ -4,7 +4,7 @@
 
 import ircd
 
-from handle.functions import logging, match
+from handle.functions import logging, is_match
 
 W = '\033[0m'  # white (normal)
 R = '\033[31m'  # red

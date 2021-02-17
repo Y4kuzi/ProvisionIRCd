@@ -6,7 +6,7 @@ import ircd
 
 Channel = ircd.Channel
 
-from handle.functions import match, logging
+from handle.functions import is_match, logging
 import time
 import re
 
@@ -15,7 +15,7 @@ chanlen = 36
 
 
 def init(ircd, reload=False):
-    ### Other modules also require this information, like /privmsg and /notice
+    # Other modules also require this information, like /privmsg and /notice
     ircd.chantypes = chantypes
 
 
@@ -34,15 +34,15 @@ matches['e'] = 'excepts'
 matches['I'] = 'invex'
 
 
-def checkMatch(self, localServer, type, channel):
+def checkMatch(self, ircd, type, channel):
     if type not in matches or not hasattr(channel, matches[type]):
         return
     for b in getattr(channel, matches[type]):
-        if (match(b, '{}!{}@{}'.format(self.nickname, self.ident, self.hostname))):
+        if (is_match(b, '{}!{}@{}'.format(self.nickname, self.ident, self.hostname))):
             return 1
-        if (match(b, '{}!{}@{}'.format(self.nickname, self.ident, self.ip))):
+        if (is_match(b, '{}!{}@{}'.format(self.nickname, self.ident, self.ip))):
             return 1
-        if (match(b, '{}!{}@{}'.format(self.nickname, self.ident, self.cloakhost))):
+        if (is_match(b, '{}!{}@{}'.format(self.nickname, self.ident, self.cloakhost))):
             return 1
 
 
@@ -136,7 +136,7 @@ class Join(ircd.Command):
             if client in channel.invites:
                 invite_override = channel.invites[client]['override']
 
-            ### Check for module hooks.
+            # Check for module hooks.
             if type(client).__name__ == 'User':
                 success = True
                 overrides = []

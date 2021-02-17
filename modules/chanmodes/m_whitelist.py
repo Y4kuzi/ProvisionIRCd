@@ -7,7 +7,7 @@ import time
 from collections import OrderedDict
 
 import ircd
-from handle.functions import logging, match, make_mask
+from handle.functions import logging, is_match, make_mask
 
 chmode = 'w'
 
@@ -56,7 +56,7 @@ def join(self, ircd, channel):
             last_level = level
         mask = entry.split(':')[1]
         modes = ''
-        if match(mask, self.fullmask()):
+        if is_match(mask, self.fullmask()):
             if level >= 9999:
                 modes += 'oq'
             elif level >= 10:

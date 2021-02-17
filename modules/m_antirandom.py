@@ -463,18 +463,18 @@ def randomness(string, strict=True):
         try:
             next = string[i + 2]
         except IndexError:
-            ### End of string.
+            # End of string.
             break
         if first in stringdict and next in stringdict[first]:
-            ### If the string is short, be more strict.
+            # If the string is short, be more strict.
             randomness += 1 if len(string) > 6 or not strict else 2
 
-    ### Randomness of 2 or higher is recommended.
+    # Randomness of 2 or higher is recommended.
     return randomness
 
 
 @ircd.Modules.hooks.pre_local_connect()
-def antirandom_check(client, ircd):
+def antirandom_check(ircd, client):
     nick = client.nickname
     score = randomness(nick.lower())
     if score >= max_score:
@@ -490,12 +490,12 @@ def antirandom_check(client, ircd):
 
     ident = client.ident
     score = randomness(ident.lower())
-    if score >= max_score + 1:  ### Less strict for idents.
+    if score >= max_score + 1:  # Less strict for idents.
         client.quit('Please provide a valid ident', error=True)
         ircd.snotice('s', '*** Randomness match for {}[{}] with score {} (/user)'.format(client.fullmask(), client.ip, score))
         return 0
 
-    ### Aleatory checks on ident? Why the hell not.
+    # Aleatory checks on ident? Why the hell not.
     if ident[0].isalpha() and ident[1:].isdigit() and len(ident) > 4:
         client.quit('Please provide a valid ident', error=True)
         ircd.snotice('s', '*** Aleatory ident match for {}!{}@*[{}]'.format(client.nickname, ident, client.ip))

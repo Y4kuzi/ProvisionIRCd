@@ -184,7 +184,6 @@ class TKL:
     def check(self, ircd, user, type):
         try:
             if type not in ircd.tkl:
-                logging.debug(f'Type {type} not found in TKL data.')
                 return
             if type.lower() in 'gzs':
                 if type in 'gz' and user.server != ircd:
@@ -194,11 +193,11 @@ class TKL:
                     host = '{}@{}'.format('*' if type.lower() == 'z' else user.ident, user.ip if type.lower() == 'z' else user.hostname)
                     if 'except' in ircd.conf and 'tkl' in ircd.conf['except']:
                         for e in ircd.conf['except']['tkl']:
-                            if match(e, host) and user.server == ircd:
+                            if is_match(e, host) and user.server == ircd:
                                 ex = True
                                 break
 
-                    if match(mask, host) and not ex:
+                    if is_match(mask, host) and not ex:
                         banmsg = ircd.tkl[type][mask]['reason']
                         setter = ircd.tkl[type][mask]['setter']
                         if type in 'GZ' and not ircd.tkl[type][mask]['global']:
@@ -299,15 +298,15 @@ def write(line):
     logging.debug(line)
 
 
-def match(first, second):
+def is_match(first, second):
     if not first and not second:
         return True
     if len(first) > 1 and first[0] == '*' and not second:
         return False
     if (len(first) > 1 and first[0] == '?') or (first and second and first[0] == second[0]):
-        return match(first[1:], second[1:])
+        return is_match(first[1:], second[1:])
     if first and first[0] == '*':
-        return match(first[1:], second) or match(first, second[1:])
+        return is_match(first[1:], second) or is_match(first, second[1:])
     return False
 
 
@@ -333,7 +332,7 @@ def checkSpamfilter(client, ircd, target, filterTarget, msg):
         for entry in iter(ircd.conf['spamfilter']):
             # t = ircd.conf['spamfilter'][entry]['type']
             action = ircd.conf['spamfilter'][entry]['action']
-            if filterTarget in ircd.conf['spamfilter'][entry]['target'] and match(entry.lower(), msg.lower()):
+            if filterTarget in ircd.conf['spamfilter'][entry]['target'] and is_match(entry.lower(), msg.lower()):
                 msg = 'Spamfilter match by {} ({}@{}) matching {} [{} {} {}]'.format(client.nickname, client.ident, client.hostname, entry, filterTarget.upper(), target, msg)
                 ircd.snotice('F', msg)
                 reason = entry
@@ -548,10 +547,11 @@ def check_flood(ircd, target):
             else:
                 sendq, recvq = 512, 512
 
-            if (len(user.recvbuffer) >= recvq or len(user.sendbuffer) >= sendq) and int(time.time()) - user.signon > 2 and not flood_safe:  # and (user.registered and int(time.time()) - user.signon > 3):
-                # user.recvbuffer is what the user is sending to the server. (what the server receives)
-                flood_type = 'recvq' if len(user.recvbuffer) >= recvq else 'sendq'
-                flood_amount = len(user.recvbuffer) if flood_type == 'recvq' else len(user.sendbuffer)
+            real_buffer_str = '\n'.join([e[1] for e in user.backbuffer])
+            buffer_len = len(real_buffer_str)
+            if buffer_len >= recvq or len(user.sendbuffer) >= sendq and int(time.time()) - user.signon > 3 and not flood_safe:
+                flood_type = 'recvq' if buffer_len >= recvq else 'sendq'
+                flood_amount = buffer_len if flood_type == 'recvq' else len(user.sendbuffer)
                 flood_limit = recvq if flood_type == 'recvq' else sendq
                 if user.registered:
                     ircd.snotice('f', '*** Flood1 -- {} ({}@{}) has reached their max {} ({}) while the limit is {}' \
@@ -559,19 +559,15 @@ def check_flood(ircd, target):
                 user.quit('Excess Flood1')
                 return
             else:
-                # if flood_safe:
-                #    logging.debug('Flood_safe for {}: {}'.format(user, '<< '+user.sendbuffer if user.sendbuffer else '>> '+user.recvbuffer))
-                buffer_len = len(user.recvbuffer.split('\n'))
-                max_len = recvq / 10
-                max_cmds = max_len / 10
+                cmd_len = len(user.backbuffer)
+                max_cmds = recvq / 30
                 if 'o' in user.modes:
                     max_cmds *= 5
 
-                if (buffer_len >= max_cmds) and (user.registered and int(time.time()) - user.signon > 1):
+                if (cmd_len >= max_cmds) and (user.registered and int(time.time()) - user.signon > 1):
                     if user.registered:
                         ircd.snotice('f', '*** Buffer Flood -- {} ({}@{}) has reached their max buffer length ({}) while the limit is {}' \
-                                     .format(user.nickname, user.ident, user.hostname, buffer_len, max_cmds))
-                    logging.debug('Flood buffer: {}'.format(user.recvbuffer))
+                                     .format(user.nickname, user.ident, user.hostname, cmd_len, max_cmds))
                     user.quit('Excess Flood2')
                     return
 

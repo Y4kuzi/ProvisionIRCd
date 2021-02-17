@@ -5,7 +5,7 @@
 import ircd
 
 import time
-from handle.functions import match, logging
+from handle.functions import is_match, logging
 
 WHO_FLAGS = {
     'A': 'Account match',
@@ -109,12 +109,12 @@ class Who(ircd.Command):
                         user_match.append(f)
 
                 elif f == 'h':
-                    if (action == '+' and (match(param, user.fullmask()))) or (('o' in client.modes or user == client) and match(param, '{}!{}@{}'.format(user.nickname, user.ident, user.hostname))):
+                    if (action == '+' and (is_match(param, user.fullmask()))) or (('o' in client.modes or user == client) and is_match(param, '{}!{}@{}'.format(user.nickname, user.ident, user.hostname))):
                         user_match.append(f)
                     if action == '-':
-                        if not match(param, user.fullmask()) and (('o' in client.modes or user == client) and not match(param, '{}!{}@{}'.format(user.nickname, user.ident, user.hostname))):
+                        if not is_match(param, user.fullmask()) and (('o' in client.modes or user == client) and not is_match(param, '{}!{}@{}'.format(user.nickname, user.ident, user.hostname))):
                             user_match.append(f)
-                        elif ('o' not in client.modes and user != client) and not match(param, user.fullmask()):
+                        elif ('o' not in client.modes and user != client) and not is_match(param, user.fullmask()):
                             user_match.append(f)
 
                 elif f == 'o':
@@ -124,18 +124,18 @@ class Who(ircd.Command):
                 elif f == 'r':
                     gcos_match = 0
                     for word in user.realname.split():
-                        if match(param.lower(), word.lower()):
+                        if is_match(param.lower(), word.lower()):
                             gcos_match = 1
                             break
                     if (action == '+' and gcos_match) or (action == '-' and not gcos_match):
                         user_match.append(f)
 
                 elif f == 's':
-                    if action == '+' and match(param, user.server.hostname) or (action == '-' and not match(param, user.server.hostname)):
+                    if action == '+' and is_match(param, user.server.hostname) or (action == '-' and not is_match(param, user.server.hostname)):
                         user_match.append(f)
 
                 elif f == 'u':
-                    if (action == '+' and match(param, user.ident)) or (action == '-' and not match(param, user.ident)):
+                    if (action == '+' and is_match(param, user.ident)) or (action == '-' and not is_match(param, user.ident)):
                         user_match.append(f)
 
             # logging.debug('User {} must match these flags: {}'.format(user.nickname, pos_match))

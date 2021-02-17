@@ -2,12 +2,12 @@ from ircd import Server
 from classes.user import User
 from handle.functions import is_sslport, check_flood, logging, save_db
 from modules.m_connect import connectTo
+from math import floor
 import select
 import ssl
 import random
 import threading
 import string
-import sys
 import os
 import hashlib
 import time
@@ -397,6 +397,16 @@ def check_loops(ircd):
         is_silent = False if server.socket else True
         server.quit('Server uplink ping timed out: {} seconds'.format(int(time.time() - server.uplink.ping)))
 
+    for user in ircd.users:
+        if user.recvbuffer:
+            user.handle_recv()
+        if user.backbuffer:
+            entry = user.backbuffer[-1]  # Fetch only last.
+            toe, command = entry
+            if time.time() > toe + 1:
+                # Remove >1 sec old entry.
+                user.backbuffer.remove(entry)
+
     for callable in [callable for callable in ircd.hooks if callable[0].lower() == 'loop']:
         try:
             callable[2](ircd)
@@ -442,9 +452,23 @@ def read_socket(ircd, sock):
             sock.quit('Read error')
             return
 
-        sock.recvbuffer += recv
-        check_flood(ircd, sock)
+        for line in recv.split('\n'):
+            if not line:
+                continue
+
+            recv_time = int(time.time())
+            tte = int(time.time())
+            delay = floor(len(line) / 90)
+            tte += delay
+            if len(sock.backbuffer) >= 10:
+                tte += len(sock.backbuffer) - 10
+            command = line
+            sock.backbuffer.append([recv_time, command])
+            sock.recvbuffer.append((tte, line), )
+            check_flood(ircd, sock)
+
         sock.handle_recv()
         return recv
+
     except Exception as ex:
         logging.exception(ex)

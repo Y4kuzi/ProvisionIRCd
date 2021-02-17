@@ -8,7 +8,7 @@ import time
 from collections import OrderedDict
 
 import ircd
-from handle.functions import valid_expire, match, cloak, logging, save_db, make_mask
+from handle.functions import valid_expire, is_match, cloak, logging, save_db, make_mask
 
 MAXMODES = 24
 
@@ -746,10 +746,10 @@ def chgumode(client, ircd, recv, override, sourceServer=None, sourceUser=None):
                             clientmaskhost = '{}@{}'.format(target.ident, target.ip)
                             if 'ip' in ircd.conf['allow'][cls]:
                                 clientmask = '{}@{}'.format(target.ident, target.ip)
-                                isMatch = match(ircd.conf['allow'][cls]['ip'], clientmask)
+                                isMatch = is_match(ircd.conf['allow'][cls]['ip'], clientmask)
                             if 'hostname' in ircd.conf['allow'][cls]:
                                 clientmask = '{}@{}'.format(target.ident, target.hostname)
-                                isMatch = match(ircd.conf['allow'][cls]['hostname'], clientmask)
+                                isMatch = is_match(ircd.conf['allow'][cls]['hostname'], clientmask)
                             if isMatch:
                                 if 'options' in ircd.conf['allow'][cls]:
                                     if 'ssl' in ircd.conf['allow'][cls]['options'] and not target.ssl:

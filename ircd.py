@@ -20,7 +20,7 @@ from classes.commands import Command
 # noinspection PyUnresolvedReferences
 from classes.modes import UserMode, ChannelMode
 from classes.rpl import ERR, RPL
-from handle.functions import match, is_sslport, update_support, logging
+from handle.functions import is_match, is_sslport, update_support, logging
 
 try:
     import objgraph
@@ -265,6 +265,7 @@ class Server:
                 self.chan_params = {}
                 self.maxlist = {'b': 500, 'e': 500, 'I': 500}
                 self.maxlist_string = "b:{s[b]},e:{s[e]},I:{s[I]}".format(s=self.maxlist)
+                self.nickchars = 'abcdefghijklmnopqrstuvwxyz0123456789`^-_[]{}|\\'
                 self.servers = []
                 self.running = 0
                 self.caps = [
@@ -709,7 +710,7 @@ class Server:
                     if sno in localServer.conf['opers'][user.operaccount]['ignore']['snomask']:
                         for m in localServer.conf['opers'][user.operaccount]['ignore']['snomask'][sno]:
                             for word in msg.split():
-                                if match(m, word) and user in users and user.server == localServer:
+                                if is_match(m, word) and user in users and user.server == localServer:
                                     users.remove(user)
                                     break
                 except Exception as ex:
