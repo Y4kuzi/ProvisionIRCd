@@ -137,12 +137,16 @@ class Ircdhelp(ircd.Command):
         c = next((c for c in self.ircd.command_class for name in c.command if name.upper() == recv[1].upper()), None)
         if c:
             info = c.__doc__.rstrip().split('\n')
-            for line in info:
+            for i,line in enumerate(info):
+                # Allows for neater docstrings.
+                if i == 0 and not line:
+                    continue
                 client.sendraw(292, ':' + line.lstrip())
             client.sendraw(292, ':-')
             return
 
         # Loop over modules to check if they have a 'helpop' attr.
+        # For example, chanmodes/m_chmodef
         for m in [m for m in self.ircd.modules if hasattr(m, 'helpop')]:
             if recv[1].lower() in m.helpop:
                 for line in m.helpop[recv[1].lower()].rstrip().split('\n'):

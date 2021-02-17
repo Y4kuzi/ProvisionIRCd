@@ -3,11 +3,12 @@
 """
 
 import ircd
-from time import strftime, gmtime
+from time import strftime
 
 
 class Time(ircd.Command):
-    """Displays server time.
+    """
+    Displays server time.
     """
 
     def __init__(self):
