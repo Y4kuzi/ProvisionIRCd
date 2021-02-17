@@ -8,7 +8,6 @@ from handle.functions import logging
 chmode = 'D'
 
 
-@ircd.Modules.channel_mode
 class chmode_D(ircd.ChannelMode):
     def __init__(self):
         self.mode = chmode

@@ -78,9 +78,6 @@ def read_recv(recv):
         line = line.strip()
         if not line:
             continue
-        # print(f"+++ inside read_recv(): {recv.split('\n')[count]}")
-        # print(line)
-        # print(line)
         yield line
 
 
@@ -114,17 +111,6 @@ def sock_accept(ircd, s):
             if ircd.use_poll:
                 ircd.fd_to_socket[u.fileno()] = (u.socket, u)
 
-            '''
-            try:
-                u.socket.setblocking(1) ### Uncomment this. Why? I don't remember.
-            except OSError as ex:
-                logging.debug(R+'Client {} probably refused the connection due to self-signed cert (ZNC?). This can cause memory leaks.'.format(u)+W)
-                logging.debug(R+'Gently disconnecting user. IP: {}'.format(u.ip)+W)
-                #logging.exception(ex)
-                u.quit(ex)
-                return
-            '''
-
             gc.collect()
             if u.fileno() == -1:
                 logging.error('{}Invalid fd for {} -- quit() on user{}'.format(R, u, W))
@@ -155,13 +141,11 @@ def sock_accept(ircd, s):
             tls = is_sslport(ircd, port)
             # conn.settimeout(15)
             if tls and not ircd.pre_wrap:
-                tls = 0
-                version = '{}{}'.format(sys.version_info[0], sys.version_info[1])
                 conn = ircd.sslctx[str(port)].wrap_socket(conn, server_side=True)
                 tls = 1
                 logging.info('Wrapped incoming server socket {} in TLS'.format(conn))
 
-            s = Server(origin=ircd, serverLink=True, sock=conn, is_ssl=tls)
+            Server(origin=ircd, serverLink=True, sock=conn, is_ssl=tls)
 
         except ssl.SSLError as ex:
             logging.exception(ex)

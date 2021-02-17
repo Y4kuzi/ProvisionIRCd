@@ -5,7 +5,6 @@ import hashlib
 import ssl
 from handle.functions import IPtoBase64, logging, match
 
-
 W = '\033[0m'  # white (normal)
 R = '\033[31m'  # red
 R2 = '\033[91m'  # bright red

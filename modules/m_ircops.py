@@ -27,7 +27,7 @@ class Ircops(ircd.Command):
             if 'H' in oper.modes:
                 status += '{}(+H)'.format(' ' if oper.away else '')
             nick_len = len(oper.nickname[23:])
-            s = oper.server.hostname.rjust(33-(len(status))-nick_len)
+            s = oper.server.hostname.rjust(33 - (len(status)) - nick_len)
             client.sendraw(self.RPL.IRCOPS, f':{oper.nickname:22}Oper {status} {s}')
         client.sendraw(self.RPL.IRCOPS, ':Total: {} IRCOP{} connected - {} Away'.format(opers, 's' if opers != 1 else '', aways))
         client.sendraw(self.RPL.IRCOPS, ':§~¤§¤~~¤§¤~~¤§¤~~¤§¤~~¤§¤~~¤§¤~~¤§¤~~¤§¤~~¤§¤~§')

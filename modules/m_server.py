@@ -42,7 +42,7 @@ class Server(ircd.Command):
             client.hopcount = int(tempName.split()[-1])
             client.name = ' '.join(recv[1:]).split(':')[1]  # ' '.join(recv[4:])
             # Snowflake fix.
-            if client.hostname not in self.ircd.conf['settings']['ulines']+[self.ircd.conf['settings']['services']]:
+            if client.hostname not in self.ircd.conf['settings']['ulines'] + [self.ircd.conf['settings']['services']]:
                 client.name = ' '.join(client.name.split()[1:])
             if client.name.startswith(':'):
                 client.name = client.name[1:]

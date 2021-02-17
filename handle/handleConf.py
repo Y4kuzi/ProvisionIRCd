@@ -34,7 +34,6 @@ def json_preprocess(lines):
     try:
         standard_json = ""
         is_multiline = False
-        keep_trail_space = 0
 
         for line in lines:
             line = line.strip()
@@ -362,7 +361,7 @@ def checkConf(ircd, user, confdir, conffile, rehash=False):
                     if module:
                         module = module[0]
                     try:
-                        result = Modules.LoadModule(ircd, m, modules[m], reload=reload, module=module)
+                        result = Modules.LoadModule(ircd, m, reload=reload, module=module)
                         if result:
                             raise Exception(result)
                     except Exception as ex:
@@ -459,48 +458,8 @@ def checkConf(ircd, user, confdir, conffile, rehash=False):
         return 0
 
     else:
-        # Open new ports?
-        currently_listening = []
-        new_ports = []
-        for sock in ircd.listen_socks:
-            try:
-                ip, port = sock.getsockname()
-                currently_listening.append(str(port))
-            except Exception as ex:
-                logging.exception(ex)
-        for port in tempconf['listen']:
-            new_ports.append(port)
-
-        ircd.conf = tempconf
-        for p in [p for p in ircd.conf['listen'] if str(p) not in currently_listening]:
-            if 'clients' in set(ircd.conf['listen'][p]['options']):
-                try:
-                    ircd.listen_socks[ircd.listenToPort(int(p), 'clients')] = 'clients'
-                except Exception as ex:
-                    logging.warning('Unable to listen on port {}: {}'.format(p, ex))
-
-            elif 'servers' in set(ircd.conf['listen'][p]['options']):
-                try:
-                    ircd.listen_socks[ircd.listenToPort(int(p), 'servers')] = 'servers'
-                except Exception as ex:
-                    logging.warning('Unable to listen on port {}: {}'.format(p, ex))
-        # Now close ports.
-        for p in [p for p in ircd.listen_socks if str(p.getsockname()[1]) not in new_ports]:
-            try:
-                logging.info('Closing port {}'.format(p))
-                del ircd.listen_socks[p]
-                p.close()
-            except Exception as ex:
-                print(ex)
-
-        if rehash:
-            ircd.broadcast([user], 'NOTICE {} :*** Configuration reloaded without any problems.'.format(user.nickname))
-
-        del j, t, tempconf
-
         # Load +P channels from db/chans.db with their modes/settings.
         if os.path.exists(ircd.rootdir + '/db/chans.db'):
-            perm_data = {}
             try:
                 with open(ircd.rootdir + '/db/chans.db') as f:
                     perm_data = f.read().split('\n')[0]
@@ -554,6 +513,45 @@ def checkConf(ircd, user, confdir, conffile, rehash=False):
                     logging.debug(f'Restored {(num)} TKL entr{"y" if num == 1 else "ies"}.')
             except Exception as ex:
                 logging.exception(ex)
+
+        # Open new ports?
+        currently_listening = []
+        new_ports = []
+        for sock in ircd.listen_socks:
+            try:
+                ip, port = sock.getsockname()
+                currently_listening.append(str(port))
+            except Exception as ex:
+                logging.exception(ex)
+        for port in tempconf['listen']:
+            new_ports.append(port)
+
+        ircd.conf = tempconf
+        for p in [p for p in ircd.conf['listen'] if str(p) not in currently_listening]:
+            if 'clients' in set(ircd.conf['listen'][p]['options']):
+                try:
+                    ircd.listen_socks[ircd.listenToPort(int(p), 'clients')] = 'clients'
+                except Exception as ex:
+                    logging.warning('Unable to listen on port {}: {}'.format(p, ex))
+
+            elif 'servers' in set(ircd.conf['listen'][p]['options']):
+                try:
+                    ircd.listen_socks[ircd.listenToPort(int(p), 'servers')] = 'servers'
+                except Exception as ex:
+                    logging.warning('Unable to listen on port {}: {}'.format(p, ex))
+        # Now close ports.
+        for p in [p for p in ircd.listen_socks if str(p.getsockname()[1]) not in new_ports]:
+            try:
+                logging.info('Closing port {}'.format(p))
+                del ircd.listen_socks[p]
+                p.close()
+            except Exception as ex:
+                print(ex)
+
+        if rehash:
+            ircd.broadcast([user], 'NOTICE {} :*** Configuration reloaded without any problems.'.format(user.nickname))
+
+        del j, t, tempconf
 
         return 1
     gc.collect()

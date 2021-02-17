@@ -124,9 +124,9 @@ class Command:
             self.ircd.command_class.remove(self)
 
         if self.support and self.support[0] in self.ircd.support:
-            logging.debug('Removed support data')
+            logging.debug('Removed support data.')
             del self.ircd.support[self.support[0]]
-        logging.debug('{} successfully unhooked'.format(self))
+        logging.debug(f'{self} successfully unhooked.')
 
     def __repr__(self):
         return f"<Command '{self.command}'>"

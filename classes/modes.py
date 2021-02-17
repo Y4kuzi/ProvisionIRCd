@@ -126,7 +126,7 @@ class BaseMode:
         if self in mode_class_list:
             mode_class_list.remove(self)
 
-        logging.debug('{} successfully unhooked'.format(self))
+        logging.debug(f'{self} successfully unhooked.')
 
     def error(self, error):
         self.unload()

@@ -113,7 +113,6 @@ def mode_del(ircd, self, channel, mode):
         channel.messageQueue = {}
 
 
-@ircd.Modules.channel_mode
 class chmodef(ircd.ChannelMode):
     def __init__(self):
         self.mode = 'f'
@@ -121,7 +120,7 @@ class chmodef(ircd.ChannelMode):
         self.type = 2
 
 
-## Types: 0 = mask, 1 = require param, 2 = optional param, 3 = no param, 4 = special user channel-mode.
+# Types: 0 = mask, 1 = require param, 2 = optional param, 3 = no param, 4 = special user channel-mode.
 # @ircd.Modules.channel_modes(chmode, 2, 3, 'Set flood protection for your channel (/helpop chmodef for more info)', None, None, '[params]') ### ('mode', type, level, 'Mode description', class 'user' or None, prefix, 'param desc')
 @ircd.Modules.hooks.pre_local_chanmode(chmode)
 @ircd.Modules.hooks.pre_remote_chanmode(chmode)
@@ -150,7 +149,7 @@ def addmode_f(self, ircd, channel, modebuf, parambuf, action, modebar, param):
                 p = []
                 for t in channel.chmodef:
                     p.append('{}:{}:{}'.format(channel.chmodef[t]['amount'], t, channel.chmodef[t]['time']))
-                ircd.chan_params[channel][m] = ','.join(p)
+                ircd.chan_params[channel][modebar] = ','.join(p)
                 return 0
 
             if len(p.split(':')) < 3:
@@ -182,10 +181,10 @@ def addmode_f(self, ircd, channel, modebuf, parambuf, action, modebar, param):
                 del channel.chmodef[type]
             if fAction:
                 if type == 'm' and fAction not in ['m', 'b']:
-                    ### Invalid action, reverting to default.
+                    # Invalid action, reverting to default.
                     fAction = None
                 elif type == 'j' and fAction not in ['i', 'R']:
-                    ### Invalid action, reverting to default.
+                    # Invalid action, reverting to default.
                     fAction = None
                 if fAction:
                     try:
@@ -206,7 +205,7 @@ def addmode_f(self, ircd, channel, modebuf, parambuf, action, modebar, param):
             channel.chmodef[type]['duration'] = duration
             if not fAction:
                 p = ':'.join(p.split(':')[:3])
-                ### Default action
+                # Default action
                 if type == 'm':
                     channel.chmodef[type]['action'] = 'kick'
                 elif type == 'j':

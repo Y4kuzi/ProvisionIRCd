@@ -27,7 +27,7 @@ class Away(ircd.Command):
             if not client.away:
                 return
             client.away = False
-            client.sendraw(305, ':You are no longer marked as being away')
+            client.sendraw(self.RPL.UNAWAY, ':You are no longer marked as being away')
         else:
             away = ' '.join(recv[1:])[:AWAYLEN]
 
@@ -37,7 +37,7 @@ class Away(ircd.Command):
             client.away = away
             if client.away.startswith(':'):
                 client.away = client.away[1:]
-            client.sendraw(306, ':You have been marked as being away')
+            client.sendraw(self.RPL.NOWAWAY, ':You have been marked as being away')
 
         updated = []
         for user in [user for user in self.ircd.users if 'away-notify' in user.caplist and user not in updated and user.socket]:

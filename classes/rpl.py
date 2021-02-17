@@ -24,6 +24,9 @@ class RPL(Enum):
     USERHOST = 302
     ISON = 303
     TEXT = 304
+    UNAWAY = 305
+    NOWAWAY = 306
+
     ENDOFWHO = 315
     LISTSTART = 321
     LIST = 322

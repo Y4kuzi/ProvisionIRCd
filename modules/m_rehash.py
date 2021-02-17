@@ -10,7 +10,6 @@ gc.enable()
 from handle.handleConf import checkConf
 
 
-@ircd.Modules.command
 class Rehash(ircd.Command):
     """
     Reloads the configuration files in memory.

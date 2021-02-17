@@ -23,7 +23,6 @@ info = """~T - text bans: block, replace, online.
 
 helpop = {"extbans": info}
 
-
 import re
 import time
 
@@ -151,8 +150,8 @@ def checkExpiredBans(ircd):
 @ircd.Modules.support(('EXTBAN=' + prefix + ',' + str(''.join(ext_bans)), True))  # (support string, boolean if support must be sent to other servers)
 @ircd.Modules.hooks.pre_local_chanmode('beI')
 @ircd.Modules.hooks.pre_remote_chanmode('beI')
-# def extbans(self, localServer, channel, modes, params, modebuf, parambuf):
 def extbans(self, localServer, channel, modebuf, parambuf, action, modebar, param):
+    commandQueue = []
     try:
         if modebar not in 'beI' or action != '+':
             return
@@ -205,7 +204,7 @@ def extbans(self, localServer, channel, modebuf, parambuf, action, modebar, para
                         return
 
             elif param[:2] == '~c':
-                ### Channel block.
+                # Channel block.
                 if len(param.split(':')) < 2:
                     return
                 chanBan = param.split(':')[1]
@@ -257,6 +256,8 @@ def extbans(self, localServer, channel, modebuf, parambuf, action, modebar, para
             c[param] = {}
             c[param]['setter'] = setter
             c[param]['ctime'] = int(time.time())
+
+        return commandQueue
 
     except Exception as ex:
         logging.exception(ex)
