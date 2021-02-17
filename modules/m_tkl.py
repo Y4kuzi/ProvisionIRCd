@@ -206,7 +206,7 @@ class Shun(ircd.Command):
     Expire formats can be: m (minutes), h (hours), d (days), w (weeks), and M (months, 30 days per unit).
     Stacking (like +1d12h) is not yet supported.
     -
-    To remove a shun ban, use -ident@host as the parameter.
+    To remove a shun, use -ident@host as the parameter.
     Example: SHUN -*@12.34.56.78.prioritytelecom.net
     """
 

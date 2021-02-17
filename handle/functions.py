@@ -210,8 +210,6 @@ class TKL:
                                     ircd.notice(user, '*** You are banned from this server: [{}] {}'.format(setter, banmsg))
                                 user.sendraw(304, '{}'.format(':[{}] {}'.format(setter, banmsg)))
                             user.quit('User has been banned from using this server', error=True)
-                        elif type == 's':
-                            ircd.notice(user, f'* Command blocked, you are shunned. [{setter}] {banmsg}')
                         return 1
         except Exception as ex:
             logging.exception(ex)

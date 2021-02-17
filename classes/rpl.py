@@ -43,6 +43,7 @@ class RPL(Enum):
     YOUREOPER = 381
     IRCOPS = 386
     ENDOFIRCOPS = 387
+    TIME = 391
 
     LOGON = 600  # Used by WATCH
     LOGOFF = 601  # Used by WATCH
