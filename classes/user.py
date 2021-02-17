@@ -482,34 +482,43 @@ class User:
 
     def setinfo(self, info, t='', source=None):
         try:
-            if not info or not type:
+            if not info or not t:
                 return
             if not source:
                 return logging.error('No source provided in setinfo()!')
             if type(source) == str or type(source).__name__ != 'Server':
                 return logging.error('Wrong source type provided in setinfo(): {}'.format(source))
-            if t not in ['host', 'ident']:
+            if t not in ['host', 'ident', 'gecos']:
                 return logging.error('Incorrect type received in setinfo(): {}'.format(t))
-            valid = 'abcdefghijklmnopqrstuvwxyz0123456789.-'
-            for c in str(info):
-                if c.lower() not in valid:
-                    info = info.replace(c, '')
-            if not info:
-                return
             updated = []
-            if self.registered:
+            if self.registered and t in ['host', 'ident']:
+                valid = 'abcdefghijklmnopqrstuvwxyz0123456789.-'
+                for c in str(info):
+                    if c.lower() not in valid:
+                        info = info.replace(c, '')
+                    if not info:
+                        return
                 for user in iter([user for user in self.ircd.users if 'chghost' in user.caplist and user not in updated and user.socket]):
                     common_chan = list(filter(lambda c: user in c.users and self in c.users, self.ircd.channels))
                     if not common_chan:
                         continue
                     user._send(':{} CHGHOST {} {}'.format(self.fullmask(), info if t == 'ident' else self.ident, info if t == 'host' else self.cloakhost))
                     updated.append(user)
-                data = ':{} {} {}'.format(self.uid, 'SETHOST' if t == 'host' else 'SETIDENT', info)
-                self.ircd.new_sync(self.ircd, source, data)
+
+            if t == 'host':
+                cmd = 'SETHOST'
+            elif t == 'ident':
+                cmd = 'SETIDENT'
+            elif t == 'gecos':
+                cmd = 'SETNAME'
+            data = ':{} {} {}'.format(self.uid, cmd, info)
+            self.ircd.new_sync(self.ircd, source, data)
             if t == 'host':
                 self.cloakhost = info
             elif t == 'ident':
                 self.ident = info
+            elif t == 'gecos':
+                self.realname = info
         except Exception as ex:
             logging.exception(ex)
 

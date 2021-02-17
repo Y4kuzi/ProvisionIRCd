@@ -39,7 +39,7 @@ class Userhost(ircd.Command):
         for nick in recv[1:]:
             users = filter(lambda u: u.nickname.lower() == nick.lower() and u.registered, self.ircd.users)
             for user in users:
-                h = '{}*=+{}@{}'.format(user.nickname, user.ident, user.cloakhost if 'o' not in self.modes else user.hostname)
+                h = '{}*=+{}@{}'.format(user.nickname, user.ident, user.cloakhost if 'o' not in user.modes else user.hostname)
                 if h not in hosts:
                     hosts.append(h)
         client.sendraw(self.RPL.USERHOST, ':{}'.format(' '.join(hosts)))

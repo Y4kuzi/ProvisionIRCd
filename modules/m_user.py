@@ -35,7 +35,6 @@ class User(ircd.Command):
             if c.lower() not in valid:
                 ident = ident.replace(c, '')
 
-        block = 0
         for cls in iter([cls for cls in self.ircd.conf['allow'] if cls in self.ircd.conf['class']]):
             t = self.ircd.conf['allow'][cls]
             isMatch = False
