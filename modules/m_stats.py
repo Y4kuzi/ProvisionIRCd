@@ -61,7 +61,7 @@ class Stats(ircd.Command):
                         if s2.introducedBy == s and s2 not in displayed:
                             client.sendraw(210, ':                        ---> {} :: {} --- introduced by: {}, uplinked to: {}'.format(s2.sid, s2, s2.introducedBy, s2.uplink))
                             displayed.append(s2)
-                            ### Let's see if there are more servers uplinked.
+                            # Let's see if there are more servers uplinked.
                             for s3 in [s3 for s3 in self.ircd.servers if s3 != s2 and s3.uplink and s3.uplink == s2]:
                                 client.sendraw(210, ':                                    ---> {} :: {} --- introduced by: {}, uplinked to: {}'.format(s3.sid, s3, s3.introducedBy, s3.uplink))
                                 displayed.append(s3)
@@ -117,7 +117,6 @@ class Stats(ircd.Command):
                         outgoing_port = t['outgoing']['port']
                 client.sendraw(210, '{} :{} >{} {{{}}}'.format(recv[1], link, incoming_host, link_class))
 
-
         elif recv[1] == 'p':
             for sock in self.ircd.listen_socks:
                 ip, port = sock.getsockname()
@@ -127,7 +126,7 @@ class Stats(ircd.Command):
                 client.sendraw(210, '{} {}:{} [options: {}], used by {} client{}'.format(recv[1], ip, port, options, len(port_clients), 's' if len(port_clients) != 1 else ''))
 
         elif recv[1] == 'G':
-            for type in [type for type in self.ircd.tkl if type in 'gGZQ']:  # G should also see g (local)
+            for type in [type for type in self.ircd.tkl if type in 'gsGZQ']:  # G should also see g (local)
                 for mask in self.ircd.tkl[type]:
                     display = mask.split('@')[1] if type == 'Q' else mask
                     t = self.ircd.tkl[type][mask]

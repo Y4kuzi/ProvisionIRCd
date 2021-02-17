@@ -45,7 +45,7 @@ class Sajoin(ircd.Command):
         target.handle('join', chan, params=p)
         chan_class = [c for c in self.ircd.channels if c.name == chan][0]
         if target.server != self.ircd:
-            ### Sync join to its server.
+            # Sync join to its server.
             prefix = ''
             for mode in [mode for mode in self.ircd.chprefix if mode in chan_class.usermodes[target]]:
                 prefix += self.ircd.chprefix[mode]

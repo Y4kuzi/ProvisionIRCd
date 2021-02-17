@@ -299,7 +299,7 @@ def check_loops(ircd):
                 mask = '{} {}'.format(mask.split('@')[0], mask.split('@')[1])
                 data = '- {} {}'.format(t, mask)
                 p = {'expire': True}
-                ircd.handle('tkl', data, params=p)
+                ircd.handle('tkl', data, kwargs=p)
 
     # Request links
     if ircd.users:

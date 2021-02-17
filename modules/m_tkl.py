@@ -190,3 +190,80 @@ class Kline(ircd.Command):
 
         except Exception as ex:
             logging.exception(ex)
+
+
+class Shun(ircd.Command):
+    """
+    Limits a users functionality on the network.
+    Shunned users can only perform /ADMIN, /PART and /QUIT commands.
+    -
+    Syntax: SHUN <expire> <ident@host> <reason>
+    Example: SHUN +3h Karen Be quiet.
+
+    Shuns Karen for 3 hours.
+    Using nicknames as an argument only works when the user is currently online.
+    -
+    Expire formats can be: m (minutes), h (hours), d (days), w (weeks), and M (months, 30 days per unit).
+    Stacking (like +1d12h) is not yet supported.
+    -
+    To remove a shun ban, use -ident@host as the parameter.
+    Example: SHUN -*@12.34.56.78.prioritytelecom.net
+    """
+
+    def __init__(self):
+        self.command = ['shun']
+        self.req_flags = 'shun'
+        self.params = 1
+
+    def execute(self, client, recv):
+        try:
+            if recv[1][0] == '-':
+                try:
+                    mask = recv[1][1:]
+                except:
+                    return client.server.broadcast([client], 'NOTICE {} :*** Notice -- Invalid hostname'.format(client.nickname))
+                if 's' not in self.ircd.tkl or mask not in self.ircd.tkl['s']:
+                    return client.server.notice(client, f'*** Notice -- No such Shun: {mask}')
+                else:
+                    data = '- s {} {}'.format(mask.split('@')[0], mask.split('@')[1])
+                    # TKL.remove(self.ircd, data)
+                    self.ircd.handle('tkl', data)
+                    return
+            else:
+                if len(recv) < 3:
+                    return client.sendraw(self.ERR.NEEDMOREPARAMS, ':{} Not enough parameters.'.format(recv[0].upper()))
+            if recv[1][0] != '+' or not valid_expire(recv[1].replace('+', '')):
+                client.server.broadcast([client], 'NOTICE {} :*** Notice -- Invalid expire'.format(client.nickname))
+                return
+            else:
+                if recv[1][1:] == '0':
+                    expire = '0'
+                else:
+                    expire = int(time.time()) + valid_expire(recv[1].replace('+', ''))
+
+            if len(recv[2].replace('*', '')) <= 5 and ('@' in recv[2] or '*' in recv[2]):
+                client.server.broadcast([client], 'NOTICE {} :*** Notice -- Host range is too small'.format(client.nickname))
+                return
+
+            if len(recv) == 3:
+                reason = 'No reason'
+            else:
+                reason = ' '.join(recv[3:])
+            if '@' not in recv[2]:
+                target = list(filter(lambda c: c.nickname.lower() == recv[2].lower(), self.ircd.users))
+                if not target:
+                    client.sendraw(401, '{} :No such nick'.format(recv[2]))
+                    return
+                mask = '*@{}'.format(target[0].hostname)
+            elif '.' not in recv[2] and '@' not in recv[2]:
+                client.server.broadcast([client], 'NOTICE {} :*** Notice -- Invalid host'.format(client.nickname))
+                return
+            else:
+                mask = makerMask(recv[2])
+            if mask:
+                data = '+ s {} {} {} {} {} :{}'.format(mask.split('@')[0], mask.split('@')[1], client.fullrealhost(), expire, int(time.time()), reason)
+                # TKL.add(self.ircd,data)
+                self.ircd.handle('tkl', data)
+
+        except Exception as ex:
+            logging.exception(ex)

@@ -306,8 +306,6 @@ class User:
                     for user in watch_notify:
                         user.sendraw(RPL.LOGON, '{} {} {} {} :logged online'.format(self.nickname, self.ident, self.cloakhost, self.signon))
 
-                    # msg = '*** Remote client connecting: {} ({}@{}) {{{}}} [{}{}]'.format(self.nickname, self.ident, self.hostname, str(self.cls), 'secure' if 'z' in self.modes else 'plain', ' '+self.socket.cipher()[0] if self.ssl else '')
-                    # self.server.snotice('C', msg)
                 except Exception as ex:
                     logging.exception(ex)
             # logging.info('New user class {} successfully created'.format(self))
@@ -410,6 +408,9 @@ class User:
                         logging.exception(ex)
                 if not allow and allow is not None:
                     continue
+
+                if command.lower() not in ['admin', 'part', 'quit', 'ping', 'pong'] and self.registered and TKL.check(self, self.server, self, 's'):
+                    return
 
                 false_cmd = True
                 c = next((x for x in ircd.command_class if command.upper() in list(x.command)), None)

@@ -184,8 +184,9 @@ class TKL:
     def check(self, ircd, user, type):
         try:
             if type not in ircd.tkl:
+                logging.debug(f'Type {type} not found in TKL data.')
                 return
-            if type.lower() in 'gz':
+            if type.lower() in 'gzs':
                 if type in 'gz' and user.server != ircd:
                     return
                 ex = False
@@ -198,18 +199,20 @@ class TKL:
                                 break
 
                     if match(mask, host) and not ex:
+                        banmsg = ircd.tkl[type][mask]['reason']
+                        setter = ircd.tkl[type][mask]['setter']
                         if type in 'GZ' and not ircd.tkl[type][mask]['global']:
                             continue
                         if type.lower() in 'gz' and user.server == ircd:
                             # Local ban on local user.
-                            banmsg = ircd.tkl[type][mask]['reason']
-                            setter = ircd.tkl[type][mask]['setter']
                             if user.socket:
                                 if user.registered:
                                     ircd.notice(user, '*** You are banned from this server: [{}] {}'.format(setter, banmsg))
                                 user.sendraw(304, '{}'.format(':[{}] {}'.format(setter, banmsg)))
                             user.quit('User has been banned from using this server', error=True)
-                        return
+                        elif type == 's':
+                            ircd.notice(user, f'* Command blocked, you are shunned. [{setter}] {banmsg}')
+                        return 1
         except Exception as ex:
             logging.exception(ex)
 
@@ -256,7 +259,7 @@ class TKL:
             for user in list(ircd.users):
                 TKL.check(self, ircd, user, tkltype)
 
-            if tkltype in 'GZQ':
+            if tkltype in 'sGZQ':
                 data = ':{} TKL + {} {} {} {} {} {} :{}'.format(ircd.sid, tkltype, ident, mask, setter, expire, ctime, reason)
                 ircd.new_sync(ircd, self, data)
             save_db(ircd)
@@ -281,7 +284,7 @@ class TKL:
                                                                                 ircd.tkl[tkltype][fullmask]['reason'])
                 ircd.snotice('G', msg)
             del ircd.tkl[tkltype][fullmask]
-            if tkltype in 'GZQ' and not expire:
+            if tkltype in 'sGZQ' and not expire:
                 data = ':{} TKL - {} {} {}'.format(ircd.sid, tkltype, ident, mask)
                 ircd.new_sync(ircd, self, data)
             save_db(ircd)
