@@ -1,6 +1,6 @@
 from ircd import Server
 from classes.user import User
-from handle.functions import is_sslport, check_flood, logging, save_db
+from handle.functions import is_sslport, check_flood, logging
 from modules.m_connect import connectTo
 from math import floor
 import select
@@ -12,13 +12,6 @@ import os
 import hashlib
 import time
 import itertools
-
-try:
-    import faulthandler
-
-    faulthandler.enable()
-except:
-    pass
 import gc
 
 gc.enable()
@@ -129,7 +122,6 @@ def sock_accept(ircd, s):
 
         except Exception as ex:
             logging.exception(ex)
-            conn.close()
             return
 
     elif ircd.listen_socks[s] == 'servers':
@@ -169,9 +161,10 @@ class DataHandler:  # (threading.Thread):
                 if ircd.use_poll:
                     fdVsEvent = ircd.pollerObject.poll(1000)
                     for fd, Event in fdVsEvent:
+                        if fd not in ircd.fd_to_socket:
+                            continue
                         try:
-                            s = ircd.fd_to_socket[fd][0]
-                            c = ircd.fd_to_socket[fd][1]
+                            s, c = ircd.fd_to_socket[fd]
                             t = type(c).__name__
 
                             if Event & (select.POLLIN | select.POLLPRI):
@@ -249,7 +242,7 @@ class DataHandler:  # (threading.Thread):
 
                     for s in write:
                         check_flood(ircd, s)
-                        if type(s).__name__ == 'User' or type(s).__name__ == 'Server':
+                        if type(s).__name__ in ['User', 'Server']:
                             try:
                                 sent = s.socket.send(bytes(s.sendbuffer, 'utf-8'))
                                 s.sendbuffer = s.sendbuffer[sent:]
@@ -261,8 +254,7 @@ class DataHandler:  # (threading.Thread):
                                 continue
 
                     check_loops(ircd)
-            except KeyboardInterrupt as ex:
-                # cleanup(ircd)
+            except KeyboardInterrupt:
                 os._exit(0)
                 return
 
@@ -361,7 +353,7 @@ def check_loops(ircd):
                             modify_status[chan] = []
                         modify_status[chan].append(param)
                         del chan.temp_status[user]
-        except:
+        except Exception:
             pass
         if chan in modify_status:
             modes = []
@@ -394,7 +386,6 @@ def check_loops(ircd):
 
     # Check for unknown or timed out servers (non-sockets)
     for server in iter([server for server in ircd.servers if not server.socket and server.uplink and server.uplink.socket and time.time() - server.uplink.ping >= 120.0]):
-        is_silent = False if server.socket else True
         server.quit('Server uplink ping timed out: {} seconds'.format(int(time.time() - server.uplink.ping)))
 
     for user in [u for u in ircd.users if u.socket]:
