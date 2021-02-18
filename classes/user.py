@@ -63,8 +63,8 @@ class blacklist_check(threading.Thread):
                 user.server.snotice('d', msg)
             if user in user.server.users:
                 user.sendraw(RPL.TEXT, f"* :{reason}")
-            user.sendbuffer = ''
-            user.recvbuffer = ''
+            user.sendbuffer = []
+            user.recvbuffer = []
             user.quit(reason)
 
         except socket.gaierror:  # socket.gaierror: [Errno -2] Name or service not known -> no match.
@@ -189,54 +189,53 @@ class User:
                 self.recvbuffer = []
                 self.validping = False
                 self.server_pass_accepted = False
-                self.uid = '{}{}'.format(self.server.sid, ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6)))
-                while [u for u in self.server.users if hasattr(u, 'uid') and u != self and u.uid == self.uid]:
-                    # while list(filter(lambda u: u.uid == self.uid, self.server.users)):
-                    self.uid = '{}{}'.format(self.server.sid, ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6)))
+                self.uid = '{}{}'.format(self.ircd.sid, ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6)))
+                while [u for u in self.ircd.users if hasattr(u, 'uid') and u != self and u.uid == self.uid]:
+                    self.uid = '{}{}'.format(self.ircd.sid, ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6)))
 
                 self.lastPingSent = time.time() * 1000
                 self.lag_measure = self.lastPingSent
 
-                self.server.users.append(self)
+                self.ircd.users.append(self)
                 for callable in [callable for callable in server.hooks if callable[0].lower() == 'new_connection']:
                     try:
-                        callable[2](self, server)
+                        callable[2](self.ircd, self)
                     except Exception as ex:
                         logging.exception(ex)
-                if 'dnsbl' in self.server.conf and self.ip.replace('.', '').isdigit() and not ipaddress.ip_address(self.ip).is_private:
+                if 'dnsbl' in self.ircd.conf and self.ip.replace('.', '').isdigit() and not ipaddress.ip_address(self.ip).is_private:
                     # self.sendraw('020', ':Please wait while we process your connection.')
                     dnsbl_except = False
-                    if 'except' in self.server.conf and 'dnsbl' in self.server.conf['except']:
-                        for e in self.server.conf['except']['dnsbl']:
+                    if 'except' in self.ircd.conf and 'dnsbl' in self.ircd.conf['except']:
+                        for e in self.ircd.conf['except']['dnsbl']:
                             if is_match(e, self.ip):
                                 dnsbl_except = True
                                 break
                     if not dnsbl_except:
                         DNSBLCheck(self)
 
-                TKL.check(self.server, self, 'z')
-                TKL.check(self.server, self, 'Z')
+                TKL.check(self.ircd, self, 'z')
+                TKL.check(self.ircd, self, 'Z')
 
-                throttleTreshhold = int(self.server.conf['settings']['throttle'].split(':')[0])
-                throttleTime = int(self.server.conf['settings']['throttle'].split(':')[1])
-                total_conns = [u for u in self.server.throttle if u.ip == self.ip and int(time.time()) - self.server.throttle[u]['ctime'] <= throttleTime]
+                throttleTreshhold = int(self.ircd.conf['settings']['throttle'].split(':')[0])
+                throttleTime = int(self.ircd.conf['settings']['throttle'].split(':')[1])
+                total_conns = [u for u in self.ircd.throttle if u.ip == self.ip and int(time.time()) - self.ircd.throttle[u]['ctime'] <= throttleTime]
                 throttle_except = False
-                if 'except' in self.server.conf and 'throttle' in self.server.conf['except']:
-                    for e in self.server.conf['except']['throttle']:
+                if 'except' in self.ircd.conf and 'throttle' in self.ircd.conf['except']:
+                    for e in self.ircd.conf['except']['throttle']:
                         if is_match(e, self.ip):
                             throttle_except = True
                             break
                 if len(total_conns) >= throttleTreshhold and not throttle_except:
                     self.quit('Throttling - You are (re)connecting too fast')
 
-                unknown_conn = [user for user in self.server.users if user.ip == self.ip and not user.registered]
-                if len(unknown_conn) > 20:
+                unknown_conn = [user for user in self.ircd.users if user.ip == self.ip and not user.registered]
+                if len(unknown_conn) >= 5:
                     self.quit('Too many unknown connections from your IP')
 
-                self.server.throttle[self] = {}
-                self.server.throttle[self]['ip'] = self.ip
-                self.server.throttle[self]['ctime'] = int(time.time())
-                self.server.totalcons += 1
+                self.ircd.throttle[self] = {}
+                self.ircd.throttle[self]['ip'] = self.ip
+                self.ircd.throttle[self]['ctime'] = int(time.time())
+                self.ircd.totalcons += 1
 
                 if self.ssl and self.socket:
                     try:
@@ -247,35 +246,33 @@ class User:
                         logging.exception(ex)
 
                 self.idle = int(time.time())
-                if self.ip in self.server.hostcache:
-                    self.hostname = self.server.hostcache[self.ip]['host']
+                if self.ip in self.ircd.hostcache:
+                    self.hostname = self.ircd.hostcache[self.ip]['host']
                     self._send(':{u.server.hostname} NOTICE AUTH :*** Found your hostname ({u.hostname}) [cached]'.format(u=self))
-                elif 'dontresolve' not in self.server.conf['settings'] or ('dontresolve' in self.server.conf['settings'] and not self.server.conf['settings']['dontresolve']):
+                elif 'dontresolve' not in self.ircd.conf['settings'] or ('dontresolve' in self.ircd.conf['settings'] and not self.ircd.conf['settings']['dontresolve']):
                     try:
                         self.hostname = socket.gethostbyaddr(self.ip)[0]
                         if not self.hostname.split('.')[1]:
                             raise
-                        self.server.hostcache[self.ip] = {}
-                        self.server.hostcache[self.ip]['host'] = self.hostname
-                        self.server.hostcache[self.ip]['ctime'] = int(time.time())
+                        self.ircd.hostcache[self.ip] = {}
+                        self.ircd.hostcache[self.ip]['host'] = self.hostname
+                        self.ircd.hostcache[self.ip]['ctime'] = int(time.time())
                         self._send(':{u.server.hostname} NOTICE AUTH :*** Found your hostname ({u.hostname})'.format(u=self))
                     except Exception as ex:
                         self.hostname = self.ip
-                        # self._send(':{} NOTICE AUTH :*** Couldn\'t resolve your hostname; using IP address instead ({})'.format(self.server.hostname, self.hostname))
                         self._send(':{u.server.hostname} NOTICE AUTH :*** Couldn\'t resolve your hostname; using IP address instead ({u.hostname})'.format(u=self))
                 else:
                     self._send(':{u.server.hostname} NOTICE AUTH :*** Host resolution is disabled, using IP ({u.ip})'.format(u=self))
 
-                TKL.check(self.server, self, 'g')
-                TKL.check(self.server, self, 'G')
+                TKL.check(self.ircd, self, 'g')
+                TKL.check(self.ircd, self, 'G')
 
                 self.cloakhost = cloak(self)
 
             else:
                 try:
-                    self.origin = server_class
                     self.ircd = server_class
-                    self.origin.users.append(self)
+                    self.ircd.users.append(self)
                     self.cls = 0
                     self.nickname = params[2]
                     self.idle = int(params[4])
@@ -300,18 +297,18 @@ class User:
                         self.ip = params[12]
                     self.realname = ' '.join(params[13:])[1:]
                     self.registered = True
-                    TKL.check(self.origin, self, 'Z')
-                    TKL.check(self.origin, self, 'G')
-                    if len(self.origin.users) > self.origin.maxgusers:
-                        self.origin.maxgusers = len(self.origin.users)
+                    TKL.check(self.ircd, self, 'Z')
+                    TKL.check(self.ircd, self, 'G')
+                    if len(self.ircd.users) > self.ircd.maxgusers:
+                        self.ircd.maxgusers = len(self.ircd.users)
 
-                    for callable in [callable for callable in self.origin.hooks if callable[0].lower() == 'remote_connect']:
+                    for callable in [callable for callable in self.ircd.hooks if callable[0].lower() == 'remote_connect']:
                         try:
-                            callable[2](self.origin, self)
+                            callable[2](self.ircd, self)
                         except Exception as ex:
                             logging.exception(ex)
 
-                    watch_notify = iter([user for user in self.origin.users if self.nickname.lower() in [x.lower() for x in user.watchlist]])
+                    watch_notify = iter([user for user in self.ircd.users if self.nickname.lower() in [x.lower() for x in user.watchlist]])
                     for user in watch_notify:
                         user.sendraw(RPL.LOGON, '{} {} {} {} :logged online'.format(self.nickname, self.ident, self.cloakhost, self.signon))
 
@@ -745,8 +742,7 @@ class User:
         return '{}!{}@{}'.format(self.nickname, self.ident if self.ident != '' else '*', host)
 
     def chlevel(self, channel):
-        localServer = self.server if self.socket else self.origin
-        if self.server.hostname.lower() in set(localServer.conf['settings']['ulines']):
+        if self.server.hostname.lower() in set(self.ircd.conf['settings']['ulines']):
             return 10000
         elif self not in set(channel.users):
             return 0
@@ -911,9 +907,9 @@ class User:
         recv = '{} {}'.format(command, data if data else '')
         parsed = self.parse_command(recv)
         command = command.split()[0].lower()
-        localServer = self.server if self.socket else self.origin
+        ircd = self.server if self.socket else self.ircd
 
-        c = next((x for x in localServer.command_class if command.upper() in list(x.command)), None)
+        c = next((x for x in ircd.command_class if command.upper() in list(x.command)), None)
         if c:
             try:
                 if c.check(self, parsed):

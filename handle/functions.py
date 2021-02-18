@@ -534,11 +534,11 @@ def check_flood(ircd, target):
                 sendq = ircd.conf['class'][user.cls]['sendq']
                 recvq = ircd.conf['class'][user.cls]['recvq']
             else:
-                sendq, recvq = 512, 512
+                sendq, recvq = 65536, 65536
 
             real_buffer_str = '\n'.join([e[1] for e in user.backbuffer])
             buffer_len = len(real_buffer_str)
-            if buffer_len >= recvq or len(user.sendbuffer) >= sendq and int(time.time()) - user.signon > 3 and not flood_safe:
+            if buffer_len >= recvq or len(user.sendbuffer) >= sendq and int(time.time()) - user.signon > 1 and not flood_safe:
                 flood_type = 'recvq' if buffer_len >= recvq else 'sendq'
                 flood_amount = buffer_len if flood_type == 'recvq' else len(user.sendbuffer)
                 flood_limit = recvq if flood_type == 'recvq' else sendq
@@ -551,8 +551,8 @@ def check_flood(ircd, target):
                 cmd_len = len(user.backbuffer)
                 max_cmds = recvq / 30
                 if 'o' in user.modes:
-                    max_cmds *= 5
-
+                    max_cmds *= 10
+                max_cmds = int(max_cmds)
                 if (cmd_len >= max_cmds) and (user.registered and int(time.time()) - user.signon > 1):
                     if user.registered:
                         ircd.snotice('f', '*** Buffer Flood -- {} ({}@{}) has reached their max buffer length ({}) while the limit is {}' \
@@ -578,7 +578,9 @@ def check_flood(ircd, target):
             else:
                 sendq, recvq = 65536, 65536
 
-            if len(server.recvbuffer) >= recvq or len(server.sendbuffer) >= sendq:
+            real_buffer_str = '\n'.join([e[1] for e in server.recvbuffer])
+            buffer_len = len(real_buffer_str)
+            if buffer_len >= recvq or len(server.sendbuffer) >= sendq:
                 flood_type = 'recvq' if len(server.recvbuffer) >= recvq else 'sendq'
                 flood_amount = len(server.recvbuffer) if flood_type == 'recvq' else len(server.sendbuffer)
                 flood_limit = recvq if flood_type == 'recvq' else sendq

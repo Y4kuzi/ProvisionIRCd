@@ -63,7 +63,7 @@ Kevorkian Virus: helps your computer shut down whenever it wants to.
           [OUT OF QUOTES, PLEASE ORDER MORE]
 Insert Something Funkeh... err... There! -->
 Cannot delete tmp150---3.tmp: There is not enough free disk space. Delete one or more files to free disk space, and then try again.
-File not found. Should I fake it ? (Y/N)
+File not found. Should I fake it? (Y/N)
 The definition of an upgrade: Take old bugs out, put new ones in
 If it's not on fire, it's a software problem
 It's a little-known fact that the Y1K problem caused the Dark Ages.
@@ -71,7 +71,7 @@ Artificial Intelligence usually beats natural stupidity.
 Making fun of AOL users is like making fun of the kid in the wheel chair.
 Daddy, why doesn't this magnet pick up this floppy disk?
 Daddy, what does FORMATTING DRIVE C mean?
-See daddy ? All the keys are in alphabetical order now.
+See, Daddy? All the keys are in alphabetical order now.
 Enter any 11-digit prime number to continue...
 ASCII and ye shall receive.
 The web is a dominatrix. Every where I turn, I see little buttons ordering me to Submit.
@@ -80,7 +80,7 @@ The web is a dominatrix. Every where I turn, I see little buttons ordering me to
 Windows not found, [P]arty, [C]elebrate, [D]rink?
 English, the Microsoft of languages...
 It's been said that Bill Gates named his company after his dick...
-Ever notice how fast Windows runs ?  -- Neither did I
+Ever notice how fast Windows runs? Neither did I
 If at first you don't succeed, work for Microsoft
 We are Microsoft. Resistance Is Futile. You Will Be Assimilated
 "Microsoft Works." - Oxymoron
