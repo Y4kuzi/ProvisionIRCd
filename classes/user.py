@@ -17,11 +17,10 @@ import threading
 import hashlib
 import select
 import ipaddress
-from math import floor
 
 try:
     import objgraph
-except:
+except ImportError:
     pass
 import gc
 
@@ -258,7 +257,7 @@ class User:
                         self.ircd.hostcache[self.ip]['host'] = self.hostname
                         self.ircd.hostcache[self.ip]['ctime'] = int(time.time())
                         self._send(':{u.server.hostname} NOTICE AUTH :*** Found your hostname ({u.hostname})'.format(u=self))
-                    except Exception as ex:
+                    except Exception:
                         self.hostname = self.ip
                         self._send(':{u.server.hostname} NOTICE AUTH :*** Couldn\'t resolve your hostname; using IP address instead ({u.hostname})'.format(u=self))
                 else:
@@ -266,7 +265,6 @@ class User:
 
                 TKL.check(self.ircd, self, 'g')
                 TKL.check(self.ircd, self, 'G')
-
                 self.cloakhost = cloak(self)
 
             else:
@@ -321,9 +319,6 @@ class User:
             logging.exception(ex)
 
     def handle_recv(self):
-        # if self.backbuffer and len(self.backbuffer) >= 10:
-        #    logging.debug(f'Do not process for {self}')
-        #    return
         try:
             for entry in list(self.recvbuffer):
                 time_to_execute, recv = entry
@@ -671,7 +666,7 @@ class User:
             cipher = None
             if self.ssl and hasattr(self.socket, 'cipher') and self.socket.cipher:
                 if self.socket.cipher():
-                    cipher = self.socket.cipher()[0]
+                    cipher, tls_version, secret_bits = self.socket.cipher()
                     self.send('NOTICE', ':*** You are connected to {} with {}-{}'.format(self.server.hostname, self.socket.version(), cipher))
 
             msg = '*** Client connecting: {u.nickname} ({u.ident}@{u.hostname}) {{{u.cls}}} [{0}{1}]'.format('secure' if self.ssl else 'plain', '' if not cipher else ' ' + cipher, u=self)
@@ -798,12 +793,11 @@ class User:
                 try:
                     sent = self.socket.send(bytes(self.sendbuffer + '\n', 'utf-8'))
                     self.sendbuffer = self.sendbuffer[sent:]
-                except:
+                except Exception:
                     break
 
             if self in ircd.pings:
                 del ircd.pings[self]
-                # logging.debug('Removed {} from server PING check'.format(self))
 
             if self.registered and (self.server == ircd or self.server.eos):
                 if reason and not kill:
@@ -877,7 +871,7 @@ class User:
                     ircd.pollerObject.unregister(self.socket)
                 try:
                     self.socket.shutdown(socket.SHUT_WR)
-                except:
+                except Exception:
                     pass
                 self.socket.close()
 

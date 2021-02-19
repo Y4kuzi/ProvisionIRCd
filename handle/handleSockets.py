@@ -214,12 +214,8 @@ class DataHandler:  # (threading.Thread):
                 else:
                     read_clients = itertools.chain(listen_socks(ircd), users(ircd), servers(ircd))
                     write_clients = itertools.chain(users(ircd, 'w'), servers(ircd, 'w'))
-
-                    # print(f"Size of read_clients: {sys.getsizeof(read_clients)}")
                     try:
                         read, write, error = select.select(read_clients, write_clients, read_clients, 1.0)
-                        # read and error need the same iteratable.
-                        # read, write, error = select.select(list(self.listen_socks) + read_users + read_servers, write_users + write_servers, read_users + #read_servers + write_users + write_servers + list(self.listen_socks), 1.0)
                     except ValueError as ex:
                         for fd in iter([fd for fd in iter(ircd.users) if fd.socket and not fd.registered]):
                             fd.quit('Limit reached')
@@ -369,7 +365,6 @@ def check_loops(ircd):
     valid_servers = iter([server for server in ircd.servers if server.socket and server.hostname])
     for server in iter([server for server in valid_servers if time.time() - server.ping > pingfreq and time.time() * 1000 - server.lastPingSent > pingfreq / 2]):
         server.lastPingSent = time.time() * 1000
-        # server.lag_measure = server.lastPingSent
         try:
             server._send(':{} PING {} {}'.format(ircd.sid, ircd.hostname, server.hostname))
         except OSError as ex:
@@ -414,7 +409,6 @@ def check_loops(ircd):
 def read_socket(ircd, sock):
     if not hasattr(sock, 'socket'):
         # Client probably repidly disconnected. Possible causes can be ZNC that have not yet accepted new cert.
-        # sock.quit('No socket')
         return
 
     try:
@@ -439,7 +433,6 @@ def read_socket(ircd, sock):
             return
 
         if not recv:
-            # logging.error('No data received from {}'.format(sock))
             sock.quit('Read error')
             return
 
