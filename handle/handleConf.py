@@ -148,18 +148,19 @@ def checkConf(ircd, user, confdir, conffile, rehash=False):
 
             default_cert, default_key = ircd.rootdir + '/ssl/server.cert.pem', ircd.rootdir + '/ssl/server.key.pem'
 
-            if not os.path.isfile(default_cert) or not os.path.isfile(default_key):
-                conferr("You have one or more SSL ports listening but there are files missing in {}/ssl/ folder. Make sure you have 'server.cert.pem' and 'server.key.pem' present!".format(ircd.rootdir), noConf=True)
-                conferr("You can create self-signed certs (not recommended) by issuing the following command in your terminal: openssl req -x509 -nodes -newkey rsa:4096 -keyout server.key.pem -out server.cert.pem", noConf=True)
-                conferr("or you can get a free CA cert from Let's Encrypt: https://letsencrypt.org", noConf=True)
+            # if not os.path.isfile(default_cert) or not os.path.isfile(default_key):
+            #    conferr("You have one or more SSL ports listening but there are files missing in {}/ssl/ folder. Make sure you have 'server.cert.pem' and 'server.key.pem' present!".format(ircd.rootdir), noConf=True)
+            #    conferr("You can create self-signed certs (not recommended) by issuing the following command in your terminal: openssl req -x509 -nodes -newkey rsa:4096 -keyout server.key.pem -out server.cert.pem", noConf=True)
+            #    conferr("or you can get a free CA cert from Let's Encrypt: https://letsencrypt.org", noConf=True)
 
             ircd.default_cert, ircd.default_key = default_cert, default_key
             ircd.default_ca_file = 'ssl/curl-ca-bundle.crt'
-
+            tls = False
             for port in tempconf['listen']:
                 ircd.tls_files[port] = {}
                 ircd.tls_files[port]['keypass'] = None
                 if 'ssl' in tempconf['listen'][port]['options']:
+                    tls = True
                     ircd.tls_files[port]['cert'] = default_cert
                     ircd.tls_files[port]['key'] = default_key
                     if 'ssl-options' not in tempconf['listen'][port]:
@@ -376,12 +377,13 @@ def checkConf(ircd, user, confdir, conffile, rehash=False):
                 except Exception as ex:
                     logging.exception(ex)
 
-            ircd.default_sslctx = ssl.SSLContext(ssl.PROTOCOL_TLS)
-            tls_cert, tls_key = ircd.default_cert, ircd.default_key
-            ircd.default_sslctx.load_cert_chain(certfile=tls_cert, keyfile=tls_key)
-            ircd.default_sslctx.load_default_certs(purpose=ssl.Purpose.CLIENT_AUTH)
-            ircd.default_sslctx.load_verify_locations(cafile=ircd.default_ca_file)
-            ircd.default_sslctx.verify_mode = ssl.CERT_NONE
+            if tls:
+                ircd.default_sslctx = ssl.SSLContext(ssl.PROTOCOL_TLS)
+                tls_cert, tls_key = ircd.default_cert, ircd.default_key
+                ircd.default_sslctx.load_cert_chain(certfile=tls_cert, keyfile=tls_key)
+                ircd.default_sslctx.load_default_certs(purpose=ssl.Purpose.CLIENT_AUTH)
+                ircd.default_sslctx.load_verify_locations(cafile=ircd.default_ca_file)
+                ircd.default_sslctx.verify_mode = ssl.CERT_NONE
 
             ircd.sslctx = {}
             for port in [p for p in tempconf['listen'] if 'ssl' in tempconf['listen'][p]['options']]:
