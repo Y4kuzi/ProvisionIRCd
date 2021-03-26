@@ -96,15 +96,15 @@ def DNSBLCheck(self):
             b = blacklist_check(user, x)
             b.start()
 
-
+"""
 READ_ONLY = (
         select.POLLIN |
-        select.POLLPRI |
+        READ_ONLY        select.POLLPRI |
         select.POLLHUP |
         select.POLLERR
 )
-READ_WRITE = READ_ONLY | select.POLLOUT
-
+READ_WRITE =  | select.POLLOUT
+"""
 
 def resolve_ip(self):
     ip = self.ip if self.ip.replace('.', '').isdigit() else self.ip[7:]
@@ -449,9 +449,9 @@ class User:
             return
         if self.socket:
             self.sendbuffer += data + '\r\n'
-            if self.server.use_poll:
-                logging.debug('Flag for {} set to READ_WRITE (_send())'.format(self))
-                self.server.pollerObject.modify(self.socket, READ_WRITE)
+            # if self.server.use_poll:
+            #    logging.debug('Flag for {} set to READ_WRITE (_send())'.format(self))
+            #    self.server.pollerObject.modify(self.socket, READ_WRITE)
 
     def send(self, command, data):
         if not self.socket:

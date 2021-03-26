@@ -1,13 +1,14 @@
-import os
-import time
+import base64
+import binascii
 import datetime
 import hashlib
-import binascii
-import base64
+import json
 import logging
 import logging.handlers
-import json
-from classes.rpl import RPL, ERR
+import os
+import time
+
+from classes.rpl import RPL
 
 W = '\033[0m'  # white (normal)
 R = '\033[31m'  # red

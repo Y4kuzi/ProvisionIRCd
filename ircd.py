@@ -78,6 +78,7 @@ class Channel:
         return "<Channel '{}'>".format(self.name)
 
 
+"""
 READ_ONLY = (
         select.POLLIN |
         select.POLLPRI |
@@ -85,6 +86,7 @@ READ_ONLY = (
         select.POLLERR
 )
 READ_WRITE = READ_ONLY | select.POLLOUT
+"""
 
 
 class Server:
@@ -532,20 +534,20 @@ class Server:
         return "<Server '{}:{}'>".format('*' if not hasattr(self, 'hostname') else self.hostname, '*' if not hasattr(self, 'sid') else self.sid)
 
     def quit(self, reason, silent=False, error=False, source=None, squit=True):
-        localServer = self.localServer
-        if not hasattr(self, 'socket') or self not in localServer.servers:
+        ircd = self.localServer
+        if not hasattr(self, 'socket') or self not in ircd.servers:
             return
         logging.info(f'Server QUIT self: {self} :: reason: {reason}')
-        if self in localServer.servers:
+        if self in ircd.servers:
             logging.info('Removing self {}'.format(self))
-            localServer.servers.remove(self)
+            ircd.servers.remove(self)
         self.recvbuffer = ''
         logging.info('Source: {}'.format(source))
         if self.uplink:
             logging.info('Server was uplinked to {}'.format(self.uplink))
         reason = reason[1:] if reason.startswith(':') else reason
-        if self in localServer.introducedTo:
-            localServer.introducedTo.remove(self)
+        if self in ircd.introducedTo:
+            ircd.introducedTo.remove(self)
         try:
             if self.hostname and self.eos and self.netinfo:
                 logging.info('{}Lost connection to remote server {}: {}{}'.format(R2, self.hostname, reason, W))
@@ -553,7 +555,7 @@ class Server:
                     skip = [self]
                     if self.uplink:
                         skip.append(self.uplink)
-                    localServer.new_sync(skip, ':{} SQUIT {} :{}'.format(localServer.sid, self.hostname, reason))
+                    ircd.new_sync(skip, ':{} SQUIT {} :{}'.format(ircd.sid, self.hostname, reason))
 
             if not silent and self.hostname:
                 if self.socket:
@@ -566,7 +568,7 @@ class Server:
                     if self.eos and self.netinfo:
                         placeholder = "Lost connection to"
                         t = 1
-                    elif self.hostname in localServer.pendingLinks:
+                    elif self.hostname in ircd.pendingLinks:
                         placeholder = "Unable to connect to"
                         t = 2
                     elif not self.eos:  # and 'link' in localServer.conf and self.hostname in localServer.conf['link']:
@@ -574,27 +576,27 @@ class Server:
                         t = 3
                     if placeholder:
                         msg = '*** {} server {}[{}:{}]: {}'.format(placeholder, self.hostname, ip, port, reason)
-                        localServer.snotice('s', msg, local=True)
+                        ircd.snotice('s', msg, local=True)
 
                     if self.is_ssl and t == 2:
-                        localServer.snotice('s', '*** Make sure TLS is enabled on both ends and ports are listening for TLS connections.', local=True)
+                        ircd.snotice('s', '*** Make sure TLS is enabled on both ends and ports are listening for TLS connections.', local=True)
                 else:
                     string = f"*** Server {self.uplink.hostname} lost connection to {self.hostname}: {reason}"
                     self.snotice('s', string)
 
-            if self in localServer.linkrequester:
-                del localServer.linkrequester[self]
+            if self in ircd.linkrequester:
+                del ircd.linkrequester[self]
 
             self.eos = False
 
-            if self.hostname in localServer.linkRequests:
-                del localServer.linkRequests[self.hostname]
+            if self.hostname in ircd.linkRequests:
+                del ircd.linkRequests[self.hostname]
 
-            if self.hostname in set(localServer.pendingLinks):
-                localServer.pendingLinks.remove(self.hostname)
+            if self.hostname in set(ircd.pendingLinks):
+                ircd.pendingLinks.remove(self.hostname)
 
-            if self in localServer.sync_queue:
-                del localServer.sync_queue[self]
+            if self in ircd.sync_queue:
+                del ircd.sync_queue[self]
 
             # if self.socket and reason and self.sid:
             #     logging.debug(f"Sending ERROR from server quit()")
@@ -608,25 +610,25 @@ class Server:
                 except:
                     break
 
-            for user in [user for user in localServer.users if not user.server]:
+            for user in [user for user in ircd.users if not user.server]:
                 user.quit('Unknown connection')
 
-            additional_servers = [server for server in localServer.servers if server.introducedBy == self or server.uplink == self]
+            additional_servers = [server for server in ircd.servers if server.introducedBy == self or server.uplink == self]
             if additional_servers:
                 logging.info('Also quitting additional servers: {}'.format(additional_servers))
-            users = [user for user in localServer.users if user.server and (user.server == self or user.server in additional_servers)]
+            users = [user for user in ircd.users if user.server and (user.server == self or user.server in additional_servers)]
             for user in users:
                 server1 = self.hostname
-                server2 = source.hostname if source else localServer.hostname
+                server2 = source.hostname if source else ircd.hostname
                 user.quit('{} {}'.format(server1, server2), squit=True)
 
             for server in additional_servers:
                 logging.info('Quitting server {}'.format(server))
-                server.quit('{} {}'.format(self.hostname, source.hostname if source else localServer.hostname))
+                server.quit('{} {}'.format(self.hostname, source.hostname if source else ircd.hostname))
 
             if self.socket:
-                if localServer.use_poll:
-                    localServer.pollerObject.unregister(self.socket)
+                if ircd.use_poll:
+                    ircd.pollerObject.unregister(self.socket)
                 try:
                     self.socket.shutdown(socket.SHUT_WR)
                 except:
@@ -636,7 +638,7 @@ class Server:
             gc.collect()
             del gc.garbage[:]
 
-            if not localServer.forked:
+            if not ircd.forked:
                 try:
                     logging.debug('[SERVER] Growth after self.quit() (if any):')
                     objgraph.show_growth(limit=10)
@@ -649,7 +651,7 @@ class Server:
             logging.exception(ex)
 
     def run(self):
-        if self.forked:
+        if self.forked and os.name == 'posix':
             self.pid = os.fork()
             if self.pid:
                 try:
@@ -662,7 +664,7 @@ class Server:
                 print('PID [{}] forked to the background'.format(self.pid))
                 sys.exit()
 
-            atexit.register(exit_handler)
+        atexit.register(exit_handler)
 
         self.running = 1
         from handle.handleSockets import DataHandler

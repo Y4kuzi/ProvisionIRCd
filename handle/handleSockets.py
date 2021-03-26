@@ -1,31 +1,24 @@
-from ircd import Server
-from classes.user import User
-from handle.functions import is_sslport, check_flood, logging
-from modules.m_connect import connectTo
-from math import floor
+import gc
+import hashlib
+import itertools
+import os
+import random
 import select
 import ssl
-import random
-import threading
 import string
-import os
-import hashlib
+import threading
 import time
-import itertools
-import gc
+from math import floor
+
+from classes.user import User
+from handle.functions import is_sslport, check_flood, logging
+from ircd import Server
+from modules.m_connect import connectTo
 
 gc.enable()
 
 W = '\033[0m'  # white (normal)
 R = '\033[31m'  # red
-
-READ_ONLY = (
-        select.POLLIN |
-        select.POLLPRI |
-        select.POLLHUP |
-        select.POLLERR
-)
-READ_WRITE = READ_ONLY | select.POLLOUT
 
 
 def listen_socks(ircd):
@@ -79,7 +72,7 @@ def sock_accept(ircd, s):
         try:
             conn, addr = s.accept()
             if ircd.use_poll:
-                ircd.pollerObject.register(conn, READ_ONLY)
+                ircd.pollerObject.register(conn, ircd.READ_ONLY)
             port = conn.getsockname()[1]
             tls = is_sslport(ircd, port)
             conn_backlog = [user for user in ircd.users if user.socket and not user.registered]
@@ -128,7 +121,7 @@ def sock_accept(ircd, s):
         try:
             conn, addr = s.accept()
             if ircd.use_poll:
-                ircd.pollerObject.register(conn, READ_ONLY)
+                ircd.pollerObject.register(conn, ircd.READ_ONLY)
             port = conn.getsockname()[1]
             tls = is_sslport(ircd, port)
             # conn.settimeout(15)
@@ -155,6 +148,15 @@ class DataHandler:  # (threading.Thread):
 
     def run(self):
         ircd = self.ircd
+        if ircd.use_poll:
+            ircd.READ_ONLY = (
+                    select.POLLIN |
+                    select.POLLPRI |
+                    select.POLLHUP |
+                    select.POLLERR
+            )
+            ircd.READ_WRITE = ircd.READ_ONLY | select.POLLOUT
+
         while ircd.running:
             try:
 
@@ -177,7 +179,7 @@ class DataHandler:  # (threading.Thread):
                                     logging.debug('Reading data from {}'.format(c))
                                     read_socket(ircd, c)
                                 try:
-                                    ircd.pollerObject.modify(s, READ_WRITE)
+                                    ircd.pollerObject.modify(s, ircd.READ_WRITE)
                                     logging.debug('Flag for {} set to READ_WRITE'.format(c))
                                 except FileNotFoundError:  # Already closed.
                                     pass
@@ -195,7 +197,7 @@ class DataHandler:  # (threading.Thread):
                                         c.quit('Write error')
                                         time.sleep(1000)
                                 logging.debug('Flag for {} set to READ_ONLY'.format(c))
-                                ircd.pollerObject.modify(s, READ_ONLY)
+                                ircd.pollerObject.modify(s, ircd.READ_ONLY)
                                 continue
                             elif Event & select.POLLHUP:
                                 # ircd.pollerObject.unregister(s)

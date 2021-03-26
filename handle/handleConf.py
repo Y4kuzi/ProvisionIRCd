@@ -1,13 +1,14 @@
-import json
-import sys
-import os
 import collections
-import ssl
 import gc
+import json
+import os
 import re
-from ircd import Channel
+import ssl
+import sys
+
 import handle.handleModules as Modules
 from handle.functions import logging
+from ircd import Channel
 
 gc.enable()
 
